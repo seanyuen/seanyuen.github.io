@@ -8,67 +8,116 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 1rem;
-            text-align: center;
+            padding: 0;
             background-color: #1e1e1e;
-            color: #f0f0f0;
+            color: #fff;
         }
+
         h1 {
-            font-size: 1.5rem;
-            color: #ffffff;
+            text-align: center;
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
         }
+
         .container {
             display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 20px;
         }
+
         .column {
-            width: 48%;
-            text-align: left;
+            flex: 1;
+            max-width: 300px;
+            margin: 10px;
         }
+
+        h2 {
+            text-align: center;
+            color: #fff;
+            background-color: #444;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
         .row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            border-radius: 5px;
+            margin-bottom: 10px;
         }
-        .row:nth-child(odd) {
-            background-color: #2a2a2a;
+
+        .row label {
+            flex: 1;
         }
-        .row:nth-child(even) {
-            background-color: #3b3b3b;
+
+        .row input {
+            flex: 1;
+            text-align: center;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 5px;
+            font-size: 14px;
         }
-        input[type="number"] {
-            width: 50px;
-            color: #000;
+
+        .row input:focus {
+            outline: none;
+            border-color: #007bff;
         }
-        span {
-            font-weight: bold;
+
+        .row span {
+            flex: 1;
+            text-align: right;
         }
+
         .subtotal {
-            margin-top: 1rem;
+            text-align: center;
             font-weight: bold;
+            margin-top: 10px;
         }
+
+        .subtotal span {
+            font-weight: normal;
+        }
+
+        .button-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            padding: 0 20px;
+        }
+
         button {
-            margin-top: 1rem;
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            background-color: #4caf50;
+            padding: 10px 20px;
+            background-color: #007bff;
             color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
         }
+
         button:hover {
-            background-color: #45a049;
+            background-color: #0056b3;
         }
+
+        button:active {
+            background-color: #003f7f;
+        }
+
         .clear-button {
-            background-color: #f44336;
+            background-color: #d9534f;
+            color: #fff;
         }
-        .copy-button {
-            background-color: #2196F3;
+
+        .clear-button:hover {
+            background-color: #c9302c;
+        }
+
+        .clear-button:active {
+            background-color: #ac2925;
         }
     </style>
 </head>
@@ -150,56 +199,65 @@
     <div class="subtotal">
         Total: $<span id="total">0.00</span>
     </div>
+    <div class="subtotal">
+        <label for="worldEvangelism">World Evangelism: $</label>
+        <input type="number" id="worldEvangelism" value="0" min="0" oninput="updateSubtotals()">
+    </div>
+    <div class="subtotal">
+        Tithe: $<span id="tithe">0.00</span>
+    </div>
 
-    <button class="clear-button" onclick="clearValues()">Clear</button>
-    <button class="copy-button" onclick="copyTotal()">Copy Total</button>
+    <div class="button-row">
+        <button class="copy-button" onclick="copyTotal()">Copy Total</button>
+        <button class="clear-button" onclick="clearValues()">Clear</button>
+    </div>
 
     <script>
-        const noteValues = { note100: 100, note50: 50, note20: 20, note10: 10, note5: 5 };
-        const coinValues = { coin2: 2, coin1: 1, coin50c: 0.5, coin20c: 0.2, coin10c: 0.1, coin5c: 0.05 };
-
         function updateSubtotals() {
-            let subtotalNotes = 0;
-            let subtotalCoins = 0;
+            // Notes
+            const noteValues = { note100: 100, note50: 50, note20: 20, note10: 10, note5: 5 };
+            const coinValues = { coin2: 2, coin1: 1, coin50c: 0.5, coin20c: 0.2, coin10c: 0.1, coin5c: 0.05 };
+            let subtotalNotes = 0, subtotalCoins = 0;
 
-            for (const [id, value] of Object.entries(noteValues)) {
-                const quantity = document.getElementById(id).value || 0;
-                const subtotal = quantity * value;
+            for (let id in noteValues) {
+                const qty = parseInt(document.getElementById(id).value) || 0;
+                const subtotal = qty * noteValues[id];
+                document.getElementById(`subtotal${id.charAt(0).toUpperCase() + id.slice(1)}`).textContent = subtotal;
                 subtotalNotes += subtotal;
-                document.getElementById(`subtotal${capitalize(id)}`).innerText = subtotal;
             }
 
-            for (const [id, value] of Object.entries(coinValues)) {
-                const quantity = document.getElementById(id).value || 0;
-                const subtotal = (quantity * value).toFixed(2);
-                subtotalCoins += parseFloat(subtotal);
-                document.getElementById(`subtotal${capitalize(id)}`).innerText = `$${subtotal}`;
+            for (let id in coinValues) {
+                const qty = parseInt(document.getElementById(id).value) || 0;
+                const subtotal = qty * coinValues[id];
+                document.getElementById(`subtotal${id.charAt(0).toUpperCase() + id.slice(1)}`).textContent = subtotal.toFixed(2);
+                subtotalCoins += subtotal;
             }
 
-            document.getElementById('subtotalNotes').innerText = subtotalNotes;
-            document.getElementById('subtotalCoins').innerText = subtotalCoins.toFixed(2);
-            document.getElementById('total').innerText = (subtotalNotes + subtotalCoins).toFixed(2);
-        }
+            const total = subtotalNotes + subtotalCoins;
+            const worldEvangelism = parseFloat(document.getElementById('worldEvangelism').value) || 0;
+            const tithe = total - worldEvangelism;
 
-        function capitalize(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
+            document.getElementById('subtotalNotes').textContent = subtotalNotes;
+            document.getElementById('subtotalCoins').textContent = subtotalCoins.toFixed(2);
+            document.getElementById('total').textContent = total.toFixed(2);
+            document.getElementById('tithe').textContent = tithe.toFixed(2);
         }
 
         function clearValues() {
-            // Reset all input fields and subtotals
-            const inputs = document.querySelectorAll('input[type="number"]');
-            inputs.forEach(input => input.value = 0);
-            const subtotals = document.querySelectorAll('span[id^="subtotal"]');
-            subtotals.forEach(subtotal => subtotal.innerText = '0');
-            document.getElementById('total').innerText = '0.00';
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => input.value = '0');
+            updateSubtotals();
         }
 
         function copyTotal() {
-            const total = document.getElementById('total').innerText;
-            const textToCopy = `Total is $${total}`;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                alert('Total copied to clipboard!');
-            });
+            const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+            const hour = new Date().getHours();
+            const timeOfDay = hour < 12 ? 'morning' : 'evening';
+            const total = parseFloat(document.getElementById('total').textContent) || 0;
+            const worldEvangelism = parseFloat(document.getElementById('worldEvangelism').value) || 0;
+            const tithe = total - worldEvangelism;
+            const textToCopy = `${dayOfWeek} ${timeOfDay}, World Evangelism is $${worldEvangelism.toFixed(2)}, Tithe is $${tithe.toFixed(2)}, Total is $${total.toFixed(2)}`;
+            navigator.clipboard.writeText(textToCopy).then(() => alert('Copied to clipboard'));
         }
     </script>
 </body>
