@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Counting Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            text-align: center;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #ffffff;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .column {
+            width: 48%;
+            text-align: left;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-radius: 5px;
+        }
+        .row:nth-child(odd) {
+            background-color: #2a2a2a;
+        }
+        .row:nth-child(even) {
+            background-color: #3b3b3b;
+        }
+        input[type="number"] {
+            width: 50px;
+            color: #000;
+        }
+        span {
+            font-weight: bold;
+        }
+        .subtotal {
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+        button {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .clear-button {
+            background-color: #f44336;
+        }
+        .copy-button {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cash Counting Calculator</h1>
+    <div class="container">
+        <!-- Notes Column -->
+        <div class="column">
+            <h2>Notes</h2>
+            <div class="row">
+                <label for="note100">$100:</label>
+                <input type="number" id="note100" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalNote100">0</span>
+            </div>
+            <div class="row">
+                <label for="note50">$50:</label>
+                <input type="number" id="note50" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalNote50">0</span>
+            </div>
+            <div class="row">
+                <label for="note20">$20:</label>
+                <input type="number" id="note20" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalNote20">0</span>
+            </div>
+            <div class="row">
+                <label for="note10">$10:</label>
+                <input type="number" id="note10" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalNote10">0</span>
+            </div>
+            <div class="row">
+                <label for="note5">$5:</label>
+                <input type="number" id="note5" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalNote5">0</span>
+            </div>
+            <div class="subtotal">
+                Subtotal for Notes: <span id="subtotalNotes">0</span>
+            </div>
+        </div>
+
+        <!-- Coins Column -->
+        <div class="column">
+            <h2>Coins</h2>
+            <div class="row">
+                <label for="coin2">$2:</label>
+                <input type="number" id="coin2" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalCoin2">0</span>
+            </div>
+            <div class="row">
+                <label for="coin1">$1:</label>
+                <input type="number" id="coin1" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalCoin1">0</span>
+            </div>
+            <div class="row">
+                <label for="coin50c">50c:</label>
+                <input type="number" id="coin50c" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalCoin50c">0.00</span>
+            </div>
+            <div class="row">
+                <label for="coin20c">20c:</label>
+                <input type="number" id="coin20c" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalCoin20c">0.00</span>
+            </div>
+            <div class="row">
+                <label for="coin10c">10c:</label>
+                <input type="number" id="coin10c" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalCoin10c">0.00</span>
+            </div>
+            <div class="row">
+                <label for="coin5c">5c:</label>
+                <input type="number" id="coin5c" value="0" min="0" oninput="updateSubtotals()">
+                <span id="subtotalCoin5c">0.00</span>
+            </div>
+            <div class="subtotal">
+                Subtotal for Coins: $<span id="subtotalCoins">0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="subtotal">
+        Total: $<span id="total">0.00</span>
+    </div>
+
+    <button class="clear-button" onclick="clearValues()">Clear</button>
+    <button class="copy-button" onclick="copyTotal()">Copy Total</button>
+
+    <script>
+        const noteValues = { note100: 100, note50: 50, note20: 20, note10: 10, note5: 5 };
+        const coinValues = { coin2: 2, coin1: 1, coin50c: 0.5, coin20c: 0.2, coin10c: 0.1, coin5c: 0.05 };
+
+        function updateSubtotals() {
+            let subtotalNotes = 0;
+            let subtotalCoins = 0;
+
+            for (const [id, value] of Object.entries(noteValues)) {
+                const quantity = document.getElementById(id).value || 0;
+                const subtotal = quantity * value;
+                subtotalNotes += subtotal;
+                document.getElementById(`subtotal${capitalize(id)}`).innerText = subtotal;
+            }
+
+            for (const [id, value] of Object.entries(coinValues)) {
+                const quantity = document.getElementById(id).value || 0;
+                const subtotal = (quantity * value).toFixed(2);
+                subtotalCoins += parseFloat(subtotal);
+                document.getElementById(`subtotal${capitalize(id)}`).innerText = `$${subtotal}`;
+            }
+
+            document.getElementById('subtotalNotes').innerText = subtotalNotes;
+            document.getElementById('subtotalCoins').innerText = subtotalCoins.toFixed(2);
+            document.getElementById('total').innerText = (subtotalNotes + subtotalCoins).toFixed(2);
+        }
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function clearValues() {
+            // Reset all input fields and subtotals
+            const inputs = document.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => input.value = 0);
+            const subtotals = document.querySelectorAll('span[id^="subtotal"]');
+            subtotals.forEach(subtotal => subtotal.innerText = '0');
+            document.getElementById('total').innerText = '0.00';
+        }
+
+        function copyTotal() {
+            const total = document.getElementById('total').innerText;
+            const textToCopy = `Total is $${total}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Total copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
