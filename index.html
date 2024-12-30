@@ -257,7 +257,7 @@
             const total = parseFloat(document.getElementById('total').textContent) || 0;
             const worldEvangelism = parseFloat(document.getElementById('worldEvangelism').value) || 0;
             const tithe = total - worldEvangelism;
-            const textToCopy = `${dayOfWeek} ${timeOfDay}, World Evangelism is $${worldEvangelism.toFixed(2)}, Tithe is $${tithe.toFixed(2)}, Total is $${total.toFixed(2)}`;
+            const textToCopy = `${dayOfWeek} ${timeOfDay}, World Evangelism: $${worldEvangelism.toFixed(2)}, Tithe: $${tithe.toFixed(2)}, Total: $${total.toFixed(2)}`;
             navigator.clipboard.writeText(textToCopy).then(() => alert('Copied to clipboard'));
         }
     </script>
