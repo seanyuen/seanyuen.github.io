@@ -53,12 +53,12 @@
 
         .row input {
             flex: 1;
-            width: 20px; /* Set a smaller width for the input */
+            width: 20px;
             text-align: center;
             background-color: #333;
             color: #fff;
             border: 1px solid #555;
-            padding: 3px; /* Adjust padding for better fit */
+            padding: 3px;
             font-size: 14px;
         }
 
@@ -84,7 +84,7 @@
 
         .button-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin: 20px 0;
             padding: 0 20px;
@@ -106,19 +106,6 @@
 
         button:active {
             background-color: #003f7f;
-        }
-
-        .clear-button {
-            background-color: #d9534f;
-            color: #fff;
-        }
-
-        .clear-button:hover {
-            background-color: #c9302c;
-        }
-
-        .clear-button:active {
-            background-color: #ac2925;
         }
     </style>
 </head>
@@ -201,63 +188,76 @@
     </div>
     <div class="subtotal">
         <label for="worldEvangelism">World Evangelism: $</label>
-        <input type="number" id="worldEvangelism" value="0" min="0" oninput="updateSubtotals()">
+        <input type="number" id="worldEvangelism" value="" min="0" oninput="updateSubtotals()">
     </div>
     <div class="subtotal">
         Tithe: $<span id="tithe">0.00</span>
     </div>
 
     <div class="button-row">
-        <button class="copy-button" onclick="copyTotal()">Copy Total</button>
-        <button class="clear-button" onclick="clearValues()">Clear</button>
+        <button class="copy-all-button" onclick="copyAll()">Copy All</button>
     </div>
 
     <script>
         function updateSubtotals() {
-            // Notes
             const noteValues = { note100: 100, note50: 50, note20: 20, note10: 10, note5: 5 };
             const coinValues = { coin2: 2, coin1: 1, coin50c: 0.5, coin20c: 0.2, coin10c: 0.1, coin5c: 0.05 };
             let subtotalNotes = 0, subtotalCoins = 0;
 
             for (let id in noteValues) {
                 const qty = parseInt(document.getElementById(id).value) || 0;
-                const subtotal = qty * noteValues[id];
-                document.getElementById(`subtotal${id.charAt(0).toUpperCase() + id.slice(1)}`).textContent = subtotal;
-                subtotalNotes += subtotal;
+                subtotalNotes += qty * noteValues[id];
             }
 
             for (let id in coinValues) {
                 const qty = parseInt(document.getElementById(id).value) || 0;
-                const subtotal = qty * coinValues[id];
-                document.getElementById(`subtotal${id.charAt(0).toUpperCase() + id.slice(1)}`).textContent = subtotal.toFixed(2);
-                subtotalCoins += subtotal;
+                subtotalCoins += qty * coinValues[id];
             }
 
             const total = subtotalNotes + subtotalCoins;
             const worldEvangelism = parseFloat(document.getElementById('worldEvangelism').value) || 0;
             const tithe = total - worldEvangelism;
 
-            document.getElementById('subtotalNotes').textContent = subtotalNotes;
+            document.getElementById('subtotalNotes').textContent = subtotalNotes.toFixed(2);
             document.getElementById('subtotalCoins').textContent = subtotalCoins.toFixed(2);
             document.getElementById('total').textContent = total.toFixed(2);
             document.getElementById('tithe').textContent = tithe.toFixed(2);
         }
 
-        function clearValues() {
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => input.value = '0');
-            updateSubtotals();
-        }
+        function copyAll() {
+            const noteValues = { note100: 100, note50: 50, note20: 20, note10: 10, note5: 5 };
+            const coinValues = { coin2: 2, coin1: 1, coin50c: 0.5, coin20c: 0.2, coin10c: 0.1, coin5c: 0.05 };
+            let details = "Denominations and Subtotals:\n\n";
 
-        function copyTotal() {
-            const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-            const hour = new Date().getHours();
-            const timeOfDay = hour < 12 ? 'morning' : 'evening';
-            const total = parseFloat(document.getElementById('total').textContent) || 0;
+            for (let id in noteValues) {
+                const qty = parseInt(document.getElementById(id).value) || 0;
+                const subtotal = qty * noteValues[id];
+                details += `$${noteValues[id]} Notes: ${qty} x $${noteValues[id]} = $${subtotal.toFixed(2)}\n`;
+            }
+
+            for (let id in coinValues) {
+                const qty = parseInt(document.getElementById(id).value) || 0;
+                const subtotal = qty * coinValues[id];
+                details += `${coinValues[id] >= 1 ? '$' : ''}${(coinValues[id] * 100)}c Coins: ${qty} x $${coinValues[id].toFixed(2)} = $${subtotal.toFixed(2)}\n`;
+            }
+
+            const subtotalNotes = parseFloat(document.getElementById('subtotalNotes').textContent) || 0;
+            const subtotalCoins = parseFloat(document.getElementById('subtotalCoins').textContent) || 0;
+            const total = subtotalNotes + subtotalCoins;
             const worldEvangelism = parseFloat(document.getElementById('worldEvangelism').value) || 0;
             const tithe = total - worldEvangelism;
-            const textToCopy = `${dayOfWeek} ${timeOfDay}, World Evangelism: $${worldEvangelism.toFixed(2)}, Tithe: $${tithe.toFixed(2)}, Total: $${total.toFixed(2)}`;
-            navigator.clipboard.writeText(textToCopy).then(() => alert('Copied to clipboard'));
+            const dateTime = new Date().toLocaleString();
+
+            details += `\nSubtotal for Notes: $${subtotalNotes.toFixed(2)}`;
+            details += `\nSubtotal for Coins: $${subtotalCoins.toFixed(2)}`;
+            details += `\nTotal: $${total.toFixed(2)}`;
+            details += `\nWorld Evangelism: $${worldEvangelism.toFixed(2)}`;
+            details += `\nTithe: $${tithe.toFixed(2)}`;
+            details += `\n\nDate & Time: ${dateTime}`;
+
+            navigator.clipboard.writeText(details).then(() => {
+                alert('Details copied to clipboard!');
+            });
         }
     </script>
 </body>
