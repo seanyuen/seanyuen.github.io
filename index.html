@@ -39,7 +39,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 20px;
     }
     .row label {
         flex: 1;
@@ -65,7 +65,7 @@
     .subtotal {
         text-align: center;
         font-weight: bold;
-        margin-top: 10px;
+        margin-top: 20px;
     }
     .subtotal span {
         font-weight: normal;
@@ -132,6 +132,12 @@
             <label for="note5">$5</label>
             <input type="number" id="note5" min="0" oninput="updateSubtotals()">
             <span id="subtotalNote5">0</span>
+        </div>
+        <!-- Blank Row for Alignment -->
+        <div class="row">
+            <label>&nbsp;</label>
+            <input type="text" disabled style="background-color: transparent; border: none;">
+            <span>&nbsp;</span>
         </div>
         <div class="subtotal">
             Subtotal for Notes: $<span id="subtotalNotes">0</span>
