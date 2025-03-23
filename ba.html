@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Investment Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function calculateInvestment() {
+            let returnRate = parseFloat(document.getElementById("returnRate").value) / 100;
+            let investor1Name = document.getElementById("investor1Name").value;
+            let investor2Name = document.getElementById("investor2Name").value;
+            let investor1Annual = parseFloat(document.getElementById("investor1Annual").value);
+            let investor2Annual = parseFloat(document.getElementById("investor2Annual").value);
+            let retirementAge = parseInt(document.getElementById("retirementAge").value);
+            let startAge = parseInt(document.getElementById("startAge").value);
+            let investor1Years = parseInt(document.getElementById("investor1Years").value);
+            let investor2StartAge = startAge + investor1Years;
+            let investor2Years = retirementAge - investor2StartAge;
+            
+            let investor1Balances = [];
+            let investor1Total = 0;
+            let investor2Balances = [];
+            let investor2Total = 0;
+            
+            for (let age = startAge; age < retirementAge; age++) {
+                if (age < startAge + investor1Years) {
+                    investor1Total += investor1Annual;
+                }
+                investor1Total *= (1 + returnRate);
+                investor1Balances.push(investor1Total);
+                
+                if (age >= investor2StartAge) {
+                    investor2Total += investor2Annual;
+                }
+                investor2Total *= (1 + returnRate);
+                investor2Balances.push(investor2Total);
+            }
+            
+            document.getElementById("investor1Result").innerText = investor1Name + "'s Final Investment: $" + formatNumber(investor1Balances[investor1Balances.length - 1]);
+            document.getElementById("investor2Result").innerText = investor2Name + "'s Final Investment: $" + formatNumber(investor2Balances[investor2Balances.length - 1]);
+            
+            updateChart(investor1Balances, investor2Balances, startAge, retirementAge, investor1Name, investor2Name);
+        }
+        
+        function formatNumber(value) {
+            return Math.round(value).toLocaleString();
+        }
+        
+        function updateChart(investor1Data, investor2Data, startAge, retirementAge, investor1Name, investor2Name) {
+            let ctx = document.getElementById("investmentChart").getContext("2d");
+            let labels = [];
+            for (let age = startAge; age < retirementAge; age++) {
+                labels.push(age);
+            }
+            
+            if (window.investmentChartInstance) {
+                window.investmentChartInstance.destroy();
+            }
+            
+            window.investmentChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: investor1Name,
+                            data: investor1Data,
+                            borderColor: 'blue',
+                            fill: false
+                        },
+                        {
+                            label: investor2Name,
+                            data: investor2Data,
+                            borderColor: 'green',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Investment Value ($)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h2>Investment Comparison</h2>
+    <label>Return Rate (%): </label><input type="number" id="returnRate" value="8"><br>
+    <label>Investor 1 Name: </label><input type="text" id="investor1Name" value="Ben"><br>
+    <label>Investor 1 Investment per Year: </label><input type="number" id="investor1Annual" value="2000"><br>
+    <label>Number of Years Investor 1 Invests: </label><input type="number" id="investor1Years" value="10"><br>
+    <label>Investor 2 Name: </label><input type="text" id="investor2Name" value="Arthur"><br>
+    <label>Investor 2 Investment per Year: </label><input type="number" id="investor2Annual" value="2000"><br>
+    <label>Retirement Age: </label><input type="number" id="retirementAge" value="67"><br>
+    <label>Initial Investment Age: </label><input type="number" id="startAge" value="19"><br>
+    <button onclick="calculateInvestment()">Calculate</button>
+    <h3 id="investor1Result"></h3>
+    <h3 id="investor2Result"></h3>
+    <canvas id="investmentChart" width="400" height="200"></canvas>
+</body>
+</html>
