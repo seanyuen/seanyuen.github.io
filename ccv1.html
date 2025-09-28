@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conference Calculator</title>
+<style>
+    body { font-family: Arial, sans-serif; background-color:#1e1e1e; color:#fff; margin:0; padding:0; }
+    h1 { text-align:center; background:#333; padding:10px 0; font-size:18px; }
+    .container { display:flex; justify-content:space-around; padding:10px; }
+    .column { flex:1; max-width:280px; margin:5px; }
+    h2 { text-align:center; background:#444; padding:4px; margin-bottom:8px; font-size:16px; }
+    .row { display:flex; align-items:center; justify-content:flex-start; margin-bottom:10px; }
+    .row label { width:90px; text-align:left; margin-right:4px; }
+    .row input { width:70px; max-width:80px; text-align:center; background:#333; color:#fff; border:1px solid #555; padding:2px; margin-right:6px; }
+    .row span { min-width:40px; text-align:right; }
+    /* Special centering for Monday-Friday rows */
+    .day-row { justify-content:center; }
+    .day-row label { text-align:right; margin-right:6px; }
+    .subtotal { text-align:center; font-weight:bold; margin:10px 0; font-size:14px; }
+    .button-row { display:flex; justify-content:space-between; margin:10px; }
+    button { padding:8px 14px; border:none; border-radius:5px; cursor:pointer; background:#007bff; color:#fff; font-size:14px; }
+    button:hover { background:#0056b3; }
+    .copy-all-button { background:#d9534f; }
+    .copy-all-button:hover { background:#c9302c; }
+</style>
+</head>
+<body>
+<h1>Conference Counting Calculator</h1>
+
+<div class="container">
+    <!-- Notes -->
+    <div class="column">
+        <h2>Notes</h2>
+        <div class="row"><label>$100</label><input type="number" id="note100" min="0" oninput="updateSubtotals()"><span id="subtotalNote100">0</span></div>
+        <div class="row"><label>$50</label><input type="number" id="note50" min="0" oninput="updateSubtotals()"><span id="subtotalNote50">0</span></div>
+        <div class="row"><label>$20</label><input type="number" id="note20" min="0" oninput="updateSubtotals()"><span id="subtotalNote20">0</span></div>
+        <div class="row"><label>$10</label><input type="number" id="note10" min="0" oninput="updateSubtotals()"><span id="subtotalNote10">0</span></div>
+        <div class="row"><label>$5</label><input type="number" id="note5" min="0" oninput="updateSubtotals()"><span id="subtotalNote5">0</span></div>
+        <div class="subtotal">Subtotal Notes: $<span id="subtotalNotes">0</span></div>
+    </div>
+
+    <!-- Coins -->
+    <div class="column">
+        <h2>Coins</h2>
+        <div class="row"><label>$2</label><input type="number" id="coin2" min="0" oninput="updateSubtotals()"><span id="subtotalCoin2">0.00</span></div>
+        <div class="row"><label>$1</label><input type="number" id="coin1" min="0" oninput="updateSubtotals()"><span id="subtotalCoin1">0.00</span></div>
+        <div class="row"><label>50c</label><input type="number" id="coin50c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin50c">0.00</span></div>
+        <div class="row"><label>20c</label><input type="number" id="coin20c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin20c">0.00</span></div>
+        <div class="row"><label>10c</label><input type="number" id="coin10c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin10c">0.00</span></div>
+        <div class="row"><label>5c</label><input type="number" id="coin5c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin5c">0.00</span></div>
+        <div class="subtotal">Subtotal Coins: $<span id="subtotalCoins">0.00</span></div>
+    </div>
+</div>
+
+<!-- Day Inputs -->
+<div class="subtotal">
+    <h2>Conference Offerings</h2>
+    <div class="row day-row"><label>Monday</label><input type="number" id="monday" value="0" min="0" oninput="updateSubtotals()"></div>
+    <div class="row day-row"><label>Tuesday</label><input type="number" id="tuesday" value="0" min="0" oninput="updateSubtotals()"></div>
+    <div class="row day-row"><label>Wednesday</label><input type="number" id="wednesday" value="0" min="0" oninput="updateSubtotals()"></div>
+    <div class="row day-row"><label>Thursday</label><input type="number" id="thursday" value="0" min="0" oninput="updateSubtotals()"></div>
+    <div class="row day-row"><label>Friday</label><input type="number" id="friday" value="0" min="0" oninput="updateSubtotals()"></div>
+</div>
+
+<div class="subtotal">
+    Tonight’s Conference Offering: $<span id="conferenceTotal">0.00</span>
+</div>
+<div class="subtotal">
+    Grand Total: $<span id="grandTotal">0.00</span>
+</div>
+
+<div class="button-row">
+    <button class="copy-all-button" onclick="copyAll()">Copy Full</button>
+    <button onclick="copyShort()">Copy Summary</button>
+</div>
+
+<script>
+function updateSubtotals() {
+    const noteValues = { note100:100, note50:50, note20:20, note10:10, note5:5 };
+    const coinValues = { coin2:2, coin1:1, coin50c:0.5, coin20c:0.2, coin10c:0.1, coin5c:0.05 };
+    let subtotalNotes=0, subtotalCoins=0;
+
+    for (let id in noteValues) {
+        const qty = +document.getElementById(id).value || 0;
+        const subtotal = qty * noteValues[id];
+        document.getElementById("subtotal"+id.charAt(0).toUpperCase()+id.slice(1)).textContent = subtotal.toFixed(0);
+        subtotalNotes += subtotal;
+    }
+    for (let id in coinValues) {
+        const qty = +document.getElementById(id).value || 0;
+        const subtotal = qty * coinValues[id];
+        document.getElementById("subtotal"+id.charAt(0).toUpperCase()+id.slice(1)).textContent = subtotal.toFixed(2);
+        subtotalCoins += subtotal;
+    }
+
+    const deductions = ["monday","tuesday","wednesday","thursday","friday"].reduce((sum,id)=> sum + (+document.getElementById(id).value||0),0);
+    const grandTotal = subtotalNotes + subtotalCoins;
+    const conferenceTotal = grandTotal - deductions;
+
+    document.getElementById("subtotalNotes").textContent = subtotalNotes.toFixed(0);
+    document.getElementById("subtotalCoins").textContent = subtotalCoins.toFixed(2);
+    document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
+    document.getElementById("conferenceTotal").textContent = conferenceTotal.toFixed(2);
+}
+
+function copyShort() {
+    const dayOfWeek = new Date().toLocaleDateString('en-US',{weekday:'long'});
+    const hour = new Date().getHours();
+    const timeOfDay = hour<12 ? "morning":"evening";
+    const todayOffering = document.getElementById("conferenceTotal").textContent;
+    let breakdown="";
+    ["Monday","Tuesday","Wednesday","Thursday","Friday"].forEach(day=>{
+        const val = +document.getElementById(day.toLowerCase()).value || 0;
+        if(val>0) breakdown += `, ${day} $${val}`;
+    });
+    const grand = document.getElementById("grandTotal").textContent;
+    const text = `${dayOfWeek} ${timeOfDay} $${todayOffering}${breakdown}, Grand total $${grand}`;
+    navigator.clipboard.writeText(text).then(()=>alert("Summary copied!"));
+}
+
+function copyAll() {
+    let details="";
+    ["note100","note50","note20","note10","note5"].forEach(id=>{
+        const qty = +document.getElementById(id).value||0;
+        if(qty>0) details+=`${id}: ${qty}\n`;
+    });
+    ["coin2","coin1","coin50c","coin20c","coin10c","coin5c"].forEach(id=>{
+        const qty = +document.getElementById(id).value||0;
+        if(qty>0) details+=`${id}: ${qty}\n`;
+    });
+    details+=`\nSubtotal Notes: $${document.getElementById("subtotalNotes").textContent}`;
+    details+=`\nSubtotal Coins: $${document.getElementById("subtotalCoins").textContent}`;
+    ["Monday","Tuesday","Wednesday","Thursday","Friday"].forEach(day=>{
+        details+=`\n${day}: $${document.getElementById(day.toLowerCase()).value||0}`;
+    });
+    details+=`\n\nToday Offering: $${document.getElementById("conferenceTotal").textContent}`;
+    details+=`\nGrand Total: $${document.getElementById("grandTotal").textContent}`;
+    navigator.clipboard.writeText(details).then(()=>alert("Details copied!"));
+}
+</script>
+</body>
+</html>
