@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conference Calculator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #1e1e1e;
+        color: #fff;
+    }
+    h1 {
+        text-align: center;
+        background-color: #333;
+        color: #fff;
+        padding: 10px 0;
+    }
+    .container {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        padding: 20px;
+    }
+    .column {
+        flex: 1;
+        max-width: 300px;
+        margin: 10px;
+    }
+    h2 {
+        text-align: center;
+        color: #fff;
+        background-color: #444;
+        padding: 5px;
+        margin-bottom: 10px;
+    }
+    .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .row label {
+        flex: 1;
+    }
+    .row input {
+        flex: 1;
+        width: 20px;
+        text-align: center;
+        background-color: #333;
+        color: #fff;
+        border: 1px solid #555;
+        padding: 3px;
+        font-size: 14px;
+    }
+    .row input:focus {
+        outline: none;
+        border-color: #007bff;
+    }
+    .row input:disabled {
+        background-color: #555;
+        color: #aaa;
+    }
+    .row span {
+        flex: 1;
+        text-align: right;
+    }
+    .subtotal {
+        text-align: center;
+        font-weight: bold;
+        margin-top: 20px;
+    }
+    .subtotal span {
+        font-weight: normal;
+    }
+    .button-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 0;
+        padding: 0 20px;
+    }
+    button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+    button:active {
+        background-color: #003f7f;
+    }
+    .copy-all-button {
+        background-color: #d9534f;
+    }
+    .copy-all-button:hover {
+        background-color: #c9302c;
+    }
+    .copy-all-button:active {
+        background-color: #ac2925;
+    }
+</style>
+</head>
+<body>
+<h1>Conference Counting Calculator</h1>
+
+<div class="container">
+    <!-- Notes Column -->
+    <div class="column">
+        <h2>Notes</h2>
+        <div class="row"><label for="note100">$100</label><input type="number" id="note100" min="0" oninput="updateSubtotals()"><span id="subtotalNote100">0</span></div>
+        <div class="row"><label for="note50">$50</label><input type="number" id="note50" min="0" oninput="updateSubtotals()"><span id="subtotalNote50">0</span></div>
+        <div class="row"><label for="note20">$20</label><input type="number" id="note20" min="0" oninput="updateSubtotals()"><span id="subtotalNote20">0</span></div>
+        <div class="row"><label for="note10">$10</label><input type="number" id="note10" min="0" oninput="updateSubtotals()"><span id="subtotalNote10">0</span></div>
+        <div class="row"><label for="note5">$5</label><input type="number" id="note5" min="0" oninput="updateSubtotals()"><span id="subtotalNote5">0</span></div>
+        <div class="subtotal">Subtotal for Notes: $<span id="subtotalNotes">0</span></div>
+    </div>
+
+    <!-- Coins Column -->
+    <div class="column">
+        <h2>Coins</h2>
+        <div class="row"><label for="coin2">$2</label><input type="number" id="coin2" min="0" oninput="updateSubtotals()"><span id="subtotalCoin2">0.00</span></div>
+        <div class="row"><label for="coin1">$1</label><input type="number" id="coin1" min="0" oninput="updateSubtotals()"><span id="subtotalCoin1">0.00</span></div>
+        <div class="row"><label for="coin50c">50c</label><input type="number" id="coin50c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin50c">0.00</span></div>
+        <div class="row"><label for="coin20c">20c</label><input type="number" id="coin20c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin20c">0.00</span></div>
+        <div class="row"><label for="coin10c">10c</label><input type="number" id="coin10c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin10c">0.00</span></div>
+        <div class="row"><label for="coin5c">5c</label><input type="number" id="coin5c" min="0" oninput="updateSubtotals()"><span id="subtotalCoin5c">0.00</span></div>
+        <div class="subtotal">Subtotal for Coins: $<span id="subtotalCoins">0.00</span></div>
+    </div>
+</div>
+
+<!-- Days of Week -->
+<div class="container">
+    <div class="column">
+        <h2>Conference Offerings</h2>
+        <div class="row"><label for="monday">Monday</label><input type="number" id="monday" value="" min="0" oninput="updateSubtotals()"></div>
+        <div class="row"><label for="tuesday">Tuesday</label><input type="number" id="tuesday" value="" min="0" oninput="updateSubtotals()"></div>
+        <div class="row"><label for="wednesday">Wednesday</label><input type="number" id="wednesday" value="" min="0" oninput="updateSubtotals()"></div>
+        <div class="row"><label for="thursday">Thursday</label><input type="number" id="thursday" value="" min="0" oninput="updateSubtotals()"></div>
+        <div class="row"><label for="friday">Friday</label><input type="number" id="friday" value="" min="" oninput="updateSubtotals()"></div>
+    </div>
+</div>
+
+<div class="subtotal">Today’s Conference Offering: $<span id="conferenceTotal">0.00</span></div>
+<div class="subtotal">Grand Total: $<span id="grandTotal">0.00</span></div>
+
+<div class="button-row">
+    <button class="copy-all-button" onclick="copyAll()">Copy Full</button>
+    <button onclick="copyShort()">Copy Summary</button>
+</div>
+
+<script>
+function updateSubtotals() {
+    const noteValues = { note100:100, note50:50, note20:20, note10:10, note5:5 };
+    const coinValues = { coin2:2, coin1:1, coin50c:0.5, coin20c:0.2, coin10c:0.1, coin5c:0.05 };
+    let subtotalNotes=0, subtotalCoins=0;
+
+    for (let id in noteValues) {
+        const qty = parseInt(document.getElementById(id).value) || 0;
+        const subtotal = qty * noteValues[id];
+        document.getElementById("subtotal"+id.charAt(0).toUpperCase()+id.slice(1)).textContent = Math.round(subtotal);
+        subtotalNotes += subtotal;
+    }
+    for (let id in coinValues) {
+        const qty = parseInt(document.getElementById(id).value) || 0;
+        const subtotal = qty * coinValues[id];
+        document.getElementById("subtotal"+id.charAt(0).toUpperCase()+id.slice(1)).textContent = subtotal.toFixed(2);
+        subtotalCoins += subtotal;
+    }
+
+    const deductions = ["monday","tuesday","wednesday","thursday","friday"].reduce((sum,id)=> sum + (+document.getElementById(id).value||0),0);
+    const grandTotal = subtotalNotes + subtotalCoins;
+    const conferenceTotal = grandTotal - deductions;
+
+    document.getElementById("subtotalNotes").textContent = Math.round(subtotalNotes);
+    document.getElementById("subtotalCoins").textContent = subtotalCoins.toFixed(2);
+    document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
+    document.getElementById("conferenceTotal").textContent = conferenceTotal.toFixed(2);
+}
+
+function copyShort() {
+    const dayOfWeek = new Date().toLocaleDateString('en-US',{weekday:'long'});
+    const hour = new Date().getHours();
+    const timeOfDay = hour<12 ? "morning":"evening";
+    const todayOffering = document.getElementById("conferenceTotal").textContent;
+    let breakdown="";
+    ["Monday","Tuesday","Wednesday","Thursday","Friday"].forEach(day=>{
+        const val = +document.getElementById(day.toLowerCase()).value || 0;
+        if(val>0) breakdown += `, ${day} $${val}`;
+    });
+    const grand = document.getElementById("grandTotal").textContent;
+    const text = `${dayOfWeek} ${timeOfDay} $${todayOffering}${breakdown}, Grand total $${grand}`;
+    navigator.clipboard.writeText(text).then(()=>alert("Summary copied!"));
+}
+
+function copyAll() {
+    let details="";
+    ["note100","note50","note20","note10","note5"].forEach(id=>{
+        const qty = +document.getElementById(id).value||0;
+        if(qty>0) details+=`${id}: ${qty}\n`;
+    });
+    ["coin2","coin1","coin50c","coin20c","coin10c","coin5c"].forEach(id=>{
+        const qty = +document.getElementById(id).value||0;
+        if(qty>0) details+=`${id}: ${qty}\n`;
+    });
+    details+=`\nSubtotal Notes: $${document.getElementById("subtotalNotes").textContent}`;
+    details+=`\nSubtotal Coins: $${document.getElementById("subtotalCoins").textContent}`;
+    ["Monday","Tuesday","Wednesday","Thursday","Friday"].forEach(day=>{
+        details+=`\n${day}: $${document.getElementById(day.toLowerCase()).value||0}`;
+    });
+    details+=`\n\nToday Offering: $${document.getElementById("conferenceTotal").textContent}`;
+    details+=`\nGrand Total: $${document.getElementById("grandTotal").textContent}`;
+    navigator.clipboard.writeText(details).then(()=>alert("Details copied!"));
+}
+
+// Disable today's input
+window.onload = function() {
+    const today = new Date().toLocaleDateString('en-US',{weekday:'long'}).toLowerCase();
+    const el = document.getElementById(today);
+    if(el) { el.disabled = true; }
+};
+</script>
+</body>
+</html>
