@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        input {
+            width: 100px;
+            text-align: center;
+            border: none;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Investment Calculator</h2>
+    
+    <label>Return Rate (%): </label><input type="number" id="returnRate" value="8"><br>
+    <label>Investor 1 Name: </label><input type="text" id="investor1Name" value="Ben"><br>
+    <label>Investor 1 Investment per Year: </label><input type="number" id="investor1Annual" value="2000"><br>
+    <label>Number of Years Investor 1 Invests: </label><input type="number" id="investor1Years" value="10"><br>
+    <label>Investor 2 Name: </label><input type="text" id="investor2Name" value="Arthur"><br>
+    <label>Investor 2 Investment per Year: </label><input type="number" id="investor2Annual" value="2000"><br>
+    <label>Retirement Age: </label><input type="number" id="retirementAge" value="67"><br>
+    <label>Initial Investment Age: </label><input type="number" id="startAge" value="19"><br>
+    
+    <button onclick="calculateInvestment()">Calculate</button>
+    <button onclick="randomizeInvestments()">Randomize Investments</button>
+
+    <h3 id="investor1Result"></h3>
+    <h3 id="investor2Result"></h3>
+
+    <h2>Investment Growth Table</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Age</th>
+                <th>Ben's Investment ($)</th>
+                <th>Arthur's Investment ($)</th>
+                <th>Rate of Return (%)</th>
+                <th>Ben's Total Investment ($)</th>
+                <th>Arthur's Total Investment ($)</th>
+            </tr>
+        </thead>
+        <tbody id="investmentTable"></tbody>
+    </table>
+
+    <canvas id="investmentChart" width="400" height="200"></canvas>
+
+    <script>
+        function calculateInvestment() {
+            let returnRate = parseFloat(document.getElementById("returnRate").value) / 100;
+            let investor1Annual = parseFloat(document.getElementById("investor1Annual").value);
+            let investor2Annual = parseFloat(document.getElementById("investor2Annual").value);
+            let retirementAge = parseInt(document.getElementById("retirementAge").value);
+            let startAge = parseInt(document.getElementById("startAge").value);
+            let investor1Years = parseInt(document.getElementById("investor1Years").value);
+            let investor2StartAge = startAge + investor1Years;
+
+            let tableBody = document.getElementById("investmentTable");
+            tableBody.innerHTML = "";
+
+            for (let age = startAge; age < retirementAge; age++) {
+                let row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${age}</td>
+                    <td><input type="number" class="investor1-investment" data-age="${age}" value="${age < startAge + investor1Years ? investor1Annual : 0}" oninput="updateTable()"></td>
+                    <td><input type="number" class="investor2-investment" data-age="${age}" value="${age >= investor2StartAge ? investor2Annual : 0}" oninput="updateTable()"></td>
+                    <td><input type="number" class="rate-of-return" data-age="${age}" value="${(returnRate * 100).toFixed(2)}" oninput="updateTable()"></td>
+                    <td class="investor1-total" id="investor1-total-${age}">0</td>
+                    <td class="investor2-total" id="investor2-total-${age}">0</td>
+                `;
+
+                tableBody.appendChild(row);
+            }
+
+            updateTable();
+        }
+
+        function updateTable() {
+            let investor1Total = 0;
+            let investor2Total = 0;
+            let startAge = parseInt(document.getElementById("startAge").value);
+            let retirementAge = parseInt(document.getElementById("retirementAge").value);
+            let investor1Balances = [];
+            let investor2Balances = [];
+
+            for (let age = startAge; age < retirementAge; age++) {
+                let investor1Invest = parseFloat(document.querySelector(`.investor1-investment[data-age='${age}']`).value) || 0;
+                let investor2Invest = parseFloat(document.querySelector(`.investor2-investment[data-age='${age}']`).value) || 0;
+                let rateOfReturn = (parseFloat(document.querySelector(`.rate-of-return[data-age='${age}']`).value) || 0) / 100;
+
+                investor1Total = (investor1Total + investor1Invest) * (1 + rateOfReturn);
+                investor2Total = (investor2Total + investor2Invest) * (1 + rateOfReturn);
+
+                document.getElementById(`investor1-total-${age}`).innerText = investor1Total.toFixed(2);
+                document.getElementById(`investor2-total-${age}`).innerText = investor2Total.toFixed(2);
+
+                investor1Balances.push(investor1Total);
+                investor2Balances.push(investor2Total);
+            }
+
+            updateChart(investor1Balances, investor2Balances, startAge, retirementAge);
+        }
+
+        function updateChart(investor1Data, investor2Data, startAge, retirementAge) {
+            let ctx = document.getElementById("investmentChart").getContext("2d");
+            let labels = Array.from({ length: retirementAge - startAge }, (_, i) => startAge + i);
+
+            if (window.investmentChartInstance) {
+                window.investmentChartInstance.destroy();
+            }
+
+            window.investmentChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: "Ben", data: investor1Data, borderColor: 'blue', fill: false },
+                        { label: "Arthur", data: investor2Data, borderColor: 'green', fill: false }
+                    ]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        function randomizeInvestments() {
+            let prevBen = 2000, prevArthur = 2000, prevReturn = 8;
+            document.querySelectorAll(".investor1-investment, .investor2-investment, .rate-of-return").forEach(input => {
+                let randFactor = Math.random() * 2;
+                if (input.classList.contains("investor1-investment")) input.value = Math.round(prevBen * randFactor);
+                if (input.classList.contains("investor2-investment")) input.value = Math.round(prevArthur * randFactor);
+                if (input.classList.contains("rate-of-return")) input.value = (prevReturn * (1 + (Math.random() - 0.5))).toFixed(2);
+            });
+            updateTable();
+        }
+
+        calculateInvestment();
+    </script>
+
+</body>
+</html>
