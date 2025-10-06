@@ -12,10 +12,10 @@
     h2 { text-align:center; background:#444; padding:4px; margin-bottom:8px; font-size:16px; }
     .row { display:flex; align-items:center; justify-content:flex-start; margin-bottom:10px; }
     .row label { width:90px; text-align:left; margin-right:4px; }
-    .row input { width:70px; max-width:80px; text-align:center; background:#333; color:#fff; border:1px solid #555; padding:2px; margin-right:6px; }
+    .row input, .row select { width:120px; text-align:center; background:#333; color:#fff; border:1px solid #555; padding:2px; margin-right:6px; }
     .row span { min-width:40px; text-align:right; }
     .day-row { justify-content:center; }
-    .day-row input[type="text"] { width:100px; margin-right:8px; }
+    .day-row input[type="text"] { width:120px; margin-right:8px; }
     .subtotal { text-align:center; font-weight:bold; margin:10px 0; font-size:14px; }
     .button-row { display:flex; justify-content:space-between; margin:10px; }
     button { padding:8px 14px; border:none; border-radius:5px; cursor:pointer; background:#007bff; color:#fff; font-size:14px; }
@@ -55,16 +55,55 @@
 <div class="subtotal">
     <h2>Other Offerings</h2>
     <div id="customInputs">
-        <div class="row day-row"><input type="text" id="label1" placeholder="Enter Label"><input type="number" id="value1" min="0" oninput="updateSubtotals()"></div>
-        <div class="row day-row"><input type="text" id="label2" placeholder="Enter Label"><input type="number" id="value2" min="0" oninput="updateSubtotals()"></div>
-        <div class="row day-row"><input type="text" id="label3" placeholder="Enter Label"><input type="number" id="value3" min="0" oninput="updateSubtotals()"></div>
-        <div class="row day-row"><input type="text" id="label4" placeholder="Enter Label"><input type="number" id="value4" min="0" oninput="updateSubtotals()"></div>
-        <div class="row day-row"><input type="text" id="label5" placeholder="Enter Label"><input type="number" id="value5" min="0" oninput="updateSubtotals()"></div>
+        <div class="row day-row">
+            <select id="label1">
+                <option value="World Evangelism">World Evangelism</option>
+                <option value="Revival">Revival</option>
+                <option value="Love Offering">Love Offering</option>
+                <option value="Men's Discipleship">Men's Discipleship</option>
+                <option value="Building">Building</option>
+            </select>
+            <input type="number" id="value1" min="0" oninput="updateSubtotals()">
+        </div>
+        <div class="row day-row">
+            <select id="label2">
+                <option value="Revival">Revival</option>
+                <option value="World Evangelism">World Evangelism</option>
+                <option value="Love Offering">Love Offering</option>
+                <option value="Men's Discipleship">Men's Discipleship</option>
+                <option value="Building">Building</option>
+            </select>
+            <input type="number" id="value2" min="0" oninput="updateSubtotals()">
+        </div>
+        <div class="row day-row">
+            <select id="label3">
+                <option value="Love Offering">Love Offering</option>
+                <option value="World Evangelism">World Evangelism</option>
+                <option value="Revival">Revival</option>
+                <option value="Men's Discipleship">Men's Discipleship</option>
+                <option value="Building">Building</option>
+            </select>
+            <input type="number" id="value3" min="0" oninput="updateSubtotals()">
+        </div>
+        <div class="row day-row">
+            <select id="label4">
+                <option value="Men's Discipleship">Men's Discipleship</option>
+                <option value="World Evangelism">World Evangelism</option>
+                <option value="Revival">Revival</option>
+                <option value="Love Offering">Love Offering</option>
+                <option value="Building">Building</option>
+            </select>
+            <input type="number" id="value4" min="0" oninput="updateSubtotals()">
+        </div>
+        <div class="row day-row">
+            <input type="text" id="label5" placeholder="Enter Custom Label">
+            <input type="number" id="value5" min="0" oninput="updateSubtotals()">
+        </div>
     </div>
 </div>
 
 <div class="subtotal">
-    Tonight’s Tithes and Offerings: $<span id="conferenceTotal">0.00</span>
+    Tithes and Offerings: $<span id="conferenceTotal">0.00</span>
 </div>
 <div class="subtotal">
     Grand Total: $<span id="grandTotal">0.00</span>
@@ -121,7 +160,8 @@ function copyShort() {
     let breakdown = "";
 
     for (let i=1; i<=5; i++) {
-        const label = document.getElementById("label"+i).value.trim();
+        const labelEl = document.getElementById("label"+i);
+        const label = labelEl.tagName === "SELECT" ? labelEl.value : labelEl.value.trim();
         const val = +document.getElementById("value"+i).value || 0;
         if (label && val>0) breakdown += `, ${label} $${val}`;
     }
@@ -151,7 +191,8 @@ function copyAll() {
 
     // Custom labels
     for (let i=1; i<=5; i++) {
-        const label = document.getElementById("label"+i).value.trim() || `Label ${i}`;
+        const labelEl = document.getElementById("label"+i);
+        const label = labelEl.tagName === "SELECT" ? labelEl.value : (labelEl.value.trim() || `Label ${i}`);
         const val = document.getElementById("value"+i).value || 0;
         details+=`\n${label}: $${val}`;
     }
