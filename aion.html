@@ -89,25 +89,81 @@
   .stat .value { font-family: var(--font-mono); font-size: 16px; font-weight: 600; }
   .stat .label { font-size: 11px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
 
-  .window-status {
-    margin-top: 16px;
-    padding: 10px 12px;
+  .cost-breakdown {
+    margin-top: 14px;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
     border-radius: 10px;
-    font-size: 13px;
+    padding: 12px 14px;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 9px;
   }
-  .window-status .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .window-status.good { background: rgba(95, 214, 140, 0.1); color: var(--good); }
-  .window-status.good .dot { background: var(--good); }
-  .window-status.warn { background: rgba(255, 122, 92, 0.1); color: var(--warn); }
-  .window-status.warn .dot { background: var(--warn); }
+  .cb-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .cb-row.cb-finish { border-top: 1px solid var(--card-border); padding-top: 9px; }
+  .cb-label { font-size: 12px; color: var(--text); line-height: 1.3; }
+  .cb-sub { display: block; font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .cb-value { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; flex-shrink: 0; }
+  .cb-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+  .cb-dot.off { background: var(--good); }
+  .cb-dot.std { background: var(--warn); }
 
   .inputs { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
   .input-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
   .input-head label { font-size: 13px; color: var(--text-dim); }
   .km-hint { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 4px; text-align: right; }
+
+  .optimal-hint {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(255, 200, 87, 0.08);
+    border: 1px solid rgba(255, 200, 87, 0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+  }
+  .optimal-hint.warn { color: var(--warn); background: rgba(255, 122, 92, 0.08); border-color: rgba(255, 122, 92, 0.25); }
+  .optimal-hint button {
+    background: var(--accent);
+    color: #1a1408;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 5px 9px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .optimal-hint button:hover { opacity: 0.85; }
+
+  .time-field {
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .time-field label { font-size: 13px; color: var(--text-dim); }
+  .time-field input[type="time"] {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+  }
+  .time-field input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
 
   .num-field {
     display: flex; align-items: center; gap: 4px;
@@ -184,9 +240,9 @@
 <body>
 <div class="app">
   <header>
-    <div class="eyebrow">32A AC &middot; Home Charging</div>
+    <div class="eyebrow">7&ndash;32A AC &middot; Time-of-Use Pricing</div>
     <h1>AION UT Charge Calculator</h1>
-    <p>Time and cost to charge on the off-peak rate</p>
+    <p>Time, energy and cost to charge across off-peak and standard rates</p>
   </header>
 
   <div class="card">
@@ -214,13 +270,23 @@
       </div>
       <div class="stat">
         <div class="value" id="costOut">$0.00</div>
-        <div class="label">Off-peak cost</div>
+        <div class="label">Total cost</div>
       </div>
     </div>
 
-    <div class="window-status" id="windowStatus">
-      <div class="dot"></div>
-      <div id="windowText">&mdash;</div>
+    <div class="cost-breakdown">
+      <div class="cb-row">
+        <div class="cb-label"><span class="cb-dot off"></span>Off-peak<span class="cb-sub" id="cbOffPeakSub">00:00&ndash;06:00 @ 4.5c/kWh</span></div>
+        <div class="cb-value" id="cbOffPeakValue">0.0 kWh &middot; $0.00</div>
+      </div>
+      <div class="cb-row">
+        <div class="cb-label"><span class="cb-dot std"></span>Standard<span class="cb-sub" id="cbStandardSub">All other times @ 31.66c/kWh</span></div>
+        <div class="cb-value" id="cbStandardValue">0.0 kWh &middot; $0.00</div>
+      </div>
+      <div class="cb-row cb-finish">
+        <div class="cb-label">Finishes</div>
+        <div class="cb-value" id="cbFinishValue">&mdash;</div>
+      </div>
     </div>
 
     <div class="inputs">
@@ -240,13 +306,31 @@
         <input type="range" id="targetRange" min="0" max="100" value="100">
         <div class="km-hint" id="targetKm">&asymp; 0 km</div>
       </div>
+      <div class="input-group">
+        <div class="input-head">
+          <label>Charging amperage</label>
+          <div class="num-field"><input type="number" id="amperageNum" min="7" max="32" value="32"><span>A</span></div>
+        </div>
+        <input type="range" id="amperageRange" min="7" max="32" value="32">
+        <div class="km-hint" id="ampRateHint">&asymp; 6.92 kWh/hr</div>
+        <div class="optimal-hint" id="optimalHint">
+          <span id="optimalHintText">Optimal: 32A &middot; finishes 06:00</span>
+          <button type="button" id="useOptimalBtn">Use</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <div class="time-field">
+          <label for="startTimeInput">Start charging at</label>
+          <input type="time" id="startTimeInput" value="22:00">
+        </div>
+      </div>
     </div>
 
     <details class="settings">
       <summary>Charging settings</summary>
       <div class="settings-grid">
         <div class="field">
-          <label>Charge rate (kWh/hr)</label>
+          <label>Rate at 32A (kWh/hr)</label>
           <input type="number" id="rateInput" value="6.92" step="0.01">
         </div>
         <div class="field">
@@ -258,9 +342,14 @@
           <input type="number" id="tariffInput" value="4.5" step="0.1">
         </div>
         <div class="field">
+          <label>Standard rate (c/kWh)</label>
+          <input type="number" id="standardTariffInput" value="31.66" step="0.01">
+        </div>
+        <div class="field">
           <label>Full range (km)</label>
           <input type="number" id="rangeKmInput" value="430" step="1">
         </div>
+        <div class="field"></div>
         <div class="field">
           <label>Off-peak start</label>
           <input type="time" id="windowStart" value="00:00">
@@ -273,7 +362,7 @@
     </details>
   </div>
 
-  <footer>Battery usable capacity (60 kWh) and full range (430 km WLTP) are manufacturer figures &mdash; adjust in settings for your real-world numbers.</footer>
+  <footer>Battery usable capacity (60 kWh), full range (430 km WLTP) and 6.92 kWh/hr at 32A are manufacturer/measured figures &mdash; adjust in settings for your real-world numbers.</footer>
 </div>
 
 <script>
@@ -284,9 +373,13 @@
   const targetRange = document.getElementById('targetRange');
   const currentNum = document.getElementById('currentNum');
   const targetNum = document.getElementById('targetNum');
+  const amperageRange = document.getElementById('amperageRange');
+  const amperageNum = document.getElementById('amperageNum');
+  const startTimeInput = document.getElementById('startTimeInput');
   const rateInput = document.getElementById('rateInput');
   const capacityInput = document.getElementById('capacityInput');
   const tariffInput = document.getElementById('tariffInput');
+  const standardTariffInput = document.getElementById('standardTariffInput');
   const rangeKmInput = document.getElementById('rangeKmInput');
   const windowStart = document.getElementById('windowStart');
   const windowEnd = document.getElementById('windowEnd');
@@ -300,37 +393,44 @@
   const costOut = document.getElementById('costOut');
   const currentKm = document.getElementById('currentKm');
   const targetKm = document.getElementById('targetKm');
-  const windowStatus = document.getElementById('windowStatus');
-  const windowText = document.getElementById('windowText');
+  const ampRateHint = document.getElementById('ampRateHint');
+  const optimalHint = document.getElementById('optimalHint');
+  const optimalHintText = document.getElementById('optimalHintText');
+  const useOptimalBtn = document.getElementById('useOptimalBtn');
+  let currentOptimalAmps = 32;
+  const cbOffPeakSub = document.getElementById('cbOffPeakSub');
+  const cbStandardSub = document.getElementById('cbStandardSub');
+  const cbOffPeakValue = document.getElementById('cbOffPeakValue');
+  const cbStandardValue = document.getElementById('cbStandardValue');
+  const cbFinishValue = document.getElementById('cbFinishValue');
 
-  function bindPair(rangeEl, numEl) {
+  function bindPair(rangeEl, numEl, min, max) {
     rangeEl.addEventListener('input', () => { numEl.value = rangeEl.value; update(); });
     numEl.addEventListener('input', () => {
       let v = Number(numEl.value);
       if (isNaN(v)) return;
-      v = Math.max(0, Math.min(100, v));
+      v = Math.max(min, Math.min(max, v));
       rangeEl.value = v;
       update();
     });
   }
-  bindPair(currentRange, currentNum);
-  bindPair(targetRange, targetNum);
+  bindPair(currentRange, currentNum, 0, 100);
+  bindPair(targetRange, targetNum, 0, 100);
+  bindPair(amperageRange, amperageNum, 7, 32);
 
-  [rateInput, capacityInput, tariffInput, rangeKmInput, windowStart, windowEnd].forEach(el => {
+  useOptimalBtn.addEventListener('click', () => {
+    amperageRange.value = currentOptimalAmps;
+    amperageNum.value = currentOptimalAmps;
+    update();
+  });
+
+  [rateInput, capacityInput, tariffInput, standardTariffInput, rangeKmInput, windowStart, windowEnd, startTimeInput].forEach(el => {
     el.addEventListener('input', update);
   });
 
   function parseTimeToMinutes(t) {
-    const [h, m] = t.split(':').map(Number);
+    const [h, m] = (t || '00:00').split(':').map(Number);
     return h * 60 + m;
-  }
-
-  function windowDurationMinutes() {
-    const start = parseTimeToMinutes(windowStart.value || '00:00');
-    const end = parseTimeToMinutes(windowEnd.value || '06:00');
-    let dur = end - start;
-    if (dur <= 0) dur += 24 * 60;
-    return dur;
   }
 
   function formatHM(totalMinutes) {
@@ -339,31 +439,77 @@
     return `${h}h ${m}m`;
   }
 
+  function formatClock(totalMinutesOfDay) {
+    const t = Math.round(totalMinutesOfDay) % 1440;
+    const h = Math.floor(t / 60).toString().padStart(2, '0');
+    const m = (t % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
   function setRingPosition(el, lengthPct, offsetPct) {
     const len = CIRC * (lengthPct / 100);
     el.style.strokeDasharray = `${len} ${CIRC - len}`;
     el.style.strokeDashoffset = `${-CIRC * (offsetPct / 100)}`;
   }
 
+  // Splits a charging session into minutes that fall inside the daily off-peak
+  // window vs minutes that fall outside it (standard rate). Handles sessions
+  // that span midnight and sessions that run across multiple days.
+  function splitOffPeakMinutes(startTimeStr, totalMinutes, windowStartStr, windowEndStr) {
+    if (totalMinutes <= 0) return { offPeak: 0, standard: 0 };
+
+    const startTOD = parseTimeToMinutes(startTimeStr);
+    const S = parseTimeToMinutes(windowStartStr);
+    let E = parseTimeToMinutes(windowEndStr);
+    let D = E - S;
+    if (D <= 0) D += 1440;
+
+    let offPeak = 0;
+    let elapsed = 0;
+    let guard = 0;
+
+    while (elapsed < totalMinutes && guard < 5000) {
+      guard++;
+      const tod = ((startTOD + elapsed) % 1440 + 1440) % 1440;
+      const pos = ((tod - S) % 1440 + 1440) % 1440;
+      let inWindow, stepToBoundary;
+      if (pos < D) {
+        inWindow = true;
+        stepToBoundary = D - pos;
+      } else {
+        inWindow = false;
+        stepToBoundary = 1440 - pos;
+      }
+      const step = Math.min(stepToBoundary, totalMinutes - elapsed);
+      if (inWindow) offPeak += step;
+      elapsed += step;
+    }
+    return { offPeak, standard: totalMinutes - offPeak };
+  }
+
   function update() {
     const current = Number(currentRange.value);
     const target = Number(targetRange.value);
-    const rate = Math.max(0.01, Number(rateInput.value) || 6.92);
+    const amperage = Number(amperageRange.value);
+    const baseRate = Math.max(0.01, Number(rateInput.value) || 6.92);
+    const rate = baseRate * (amperage / 32);
     const capacity = Math.max(0.1, Number(capacityInput.value) || 60);
-    const tariff = Number(tariffInput.value) || 0;
+    const offPeakPrice = Number(tariffInput.value) || 0;
+    const standardPrice = Number(standardTariffInput.value) || 0;
     const fullRangeKm = Math.max(1, Number(rangeKmInput.value) || 430);
+    const startTime = startTimeInput.value || '22:00';
 
     timeLabel.textContent = `to ${target}%`;
+    ampRateHint.innerHTML = `&asymp; ${rate.toFixed(2)} kWh/hr`;
 
     const deltaPct = Math.max(0, target - current);
     const energyNeeded = (deltaPct / 100) * capacity;
-    const hoursNeeded = energyNeeded / rate;
+    const hoursNeeded = rate > 0 ? energyNeeded / rate : 0;
     const minutesNeeded = hoursNeeded * 60;
 
     timeOut.textContent = deltaPct === 0 ? 'Already there' : formatHM(minutesNeeded);
     energyOut.textContent = `${energyNeeded.toFixed(1)} kWh`;
     rangeOut.textContent = `${Math.round((deltaPct / 100) * fullRangeKm)} km`;
-    costOut.textContent = `$${(energyNeeded * tariff / 100).toFixed(2)}`;
     currentKm.innerHTML = `&asymp; ${Math.round((current / 100) * fullRangeKm)} km`;
     targetKm.innerHTML = `&asymp; ${Math.round((target / 100) * fullRangeKm)} km`;
 
@@ -374,18 +520,60 @@
     targetMarker.style.transform = `rotate(${angle}deg)`;
     targetMarker.style.transformOrigin = '110px 110px';
 
-    const winDur = windowDurationMinutes();
+    const split = splitOffPeakMinutes(startTime, minutesNeeded, windowStart.value, windowEnd.value);
+    const offPeakEnergy = rate * (split.offPeak / 60);
+    const standardEnergy = rate * (split.standard / 60);
+    const offPeakCost = offPeakEnergy * offPeakPrice / 100;
+    const standardCost = standardEnergy * standardPrice / 100;
+    const totalCost = offPeakCost + standardCost;
+
+    costOut.textContent = `$${totalCost.toFixed(2)}`;
+    cbOffPeakSub.textContent = `${windowStart.value}\u2013${windowEnd.value} @ ${offPeakPrice}c/kWh`;
+    cbStandardSub.textContent = `All other times @ ${standardPrice}c/kWh`;
+    cbOffPeakValue.textContent = `${offPeakEnergy.toFixed(1)} kWh \u00b7 $${offPeakCost.toFixed(2)}`;
+    cbStandardValue.textContent = `${standardEnergy.toFixed(1)} kWh \u00b7 $${standardCost.toFixed(2)}`;
+
     if (deltaPct === 0) {
-      windowStatus.className = 'window-status good';
-      windowText.textContent = 'No charge required';
-    } else if (minutesNeeded <= winDur) {
-      windowStatus.className = 'window-status good';
-      const spare = winDur - minutesNeeded;
-      windowText.textContent = `Finishes within the off-peak window \u2014 ${formatHM(spare)} to spare`;
+      cbFinishValue.textContent = '\u2014';
     } else {
-      windowStatus.className = 'window-status warn';
-      const over = minutesNeeded - winDur;
-      windowText.textContent = `Runs ${formatHM(over)} past the off-peak window`;
+      const startTOD = parseTimeToMinutes(startTime);
+      const finishAbs = startTOD + minutesNeeded;
+      const dayOffset = Math.floor(finishAbs / 1440);
+      const finishClock = formatClock(finishAbs);
+      cbFinishValue.textContent = dayOffset > 0 ? `${finishClock} (+${dayOffset}d)` : finishClock;
+    }
+
+    // Optimal amperage: the lowest amp setting that still finishes exactly by
+    // off-peak end. Going lower risks spilling into tomorrow's standard rate;
+    // going higher just pushes more energy into tonight's standard-rate hours
+    // before midnight for no benefit, since the off-peak window length is fixed.
+    if (deltaPct === 0) {
+      optimalHint.classList.remove('warn');
+      optimalHintText.textContent = 'No charge required';
+      useOptimalBtn.style.display = 'none';
+    } else {
+      const startTOD = parseTimeToMinutes(startTime);
+      const endTOD = parseTimeToMinutes(windowEnd.value);
+      let availMin = endTOD - startTOD;
+      if (availMin <= 0) availMin += 1440;
+      const availHours = availMin / 60;
+      const neededRate = energyNeeded / availHours;
+
+      if (neededRate > baseRate) {
+        optimalHint.classList.add('warn');
+        optimalHintText.textContent = `Even 32A won't finish by ${windowEnd.value} \u2014 needs ${formatHM(hoursNeeded * 60)}`;
+        useOptimalBtn.style.display = 'none';
+        currentOptimalAmps = 32;
+      } else {
+        let optimalAmps = Math.ceil((neededRate / baseRate) * 32);
+        optimalAmps = Math.max(7, Math.min(32, optimalAmps));
+        currentOptimalAmps = optimalAmps;
+        const actualRate = baseRate * (optimalAmps / 32);
+        const actualFinishAbs = startTOD + (energyNeeded / actualRate) * 60;
+        optimalHint.classList.remove('warn');
+        optimalHintText.textContent = `Optimal: ${optimalAmps}A \u00b7 finishes ${formatClock(actualFinishAbs)}`;
+        useOptimalBtn.style.display = (optimalAmps === amperage) ? 'none' : '';
+      }
     }
   }
 
