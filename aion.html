@@ -87,6 +87,7 @@
     text-align: center;
   }
   .stat .value { font-family: var(--font-mono); font-size: 16px; font-weight: 600; }
+  .stat .value-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); margin-top: 1px; }
   .stat .label { font-size: 11px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
 
   .cost-breakdown {
@@ -270,6 +271,7 @@
       </div>
       <div class="stat">
         <div class="value" id="costOut">$0.00</div>
+        <div class="value-sub" id="costPerKwhOut">&mdash;</div>
         <div class="label">Total cost</div>
       </div>
     </div>
@@ -391,6 +393,7 @@
   const energyOut = document.getElementById('energyOut');
   const rangeOut = document.getElementById('rangeOut');
   const costOut = document.getElementById('costOut');
+  const costPerKwhOut = document.getElementById('costPerKwhOut');
   const currentKm = document.getElementById('currentKm');
   const targetKm = document.getElementById('targetKm');
   const ampRateHint = document.getElementById('ampRateHint');
@@ -528,6 +531,7 @@
     const totalCost = offPeakCost + standardCost;
 
     costOut.textContent = `$${totalCost.toFixed(2)}`;
+    costPerKwhOut.textContent = energyNeeded > 0 ? `${(totalCost / energyNeeded * 100).toFixed(2)}c/kWh` : '\u2014';
     cbOffPeakSub.textContent = `${windowStart.value}\u2013${windowEnd.value} @ ${offPeakPrice}c/kWh`;
     cbStandardSub.textContent = `All other times @ ${standardPrice}c/kWh`;
     cbOffPeakValue.textContent = `${offPeakEnergy.toFixed(1)} kWh \u00b7 $${offPeakCost.toFixed(2)}`;
