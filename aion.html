@@ -577,6 +577,14 @@
     }
   }
 
+  // Default "Start charging at" to the current local time on page load.
+  (function setStartTimeToNow() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    startTimeInput.value = `${hh}:${mm}`;
+  })();
+
   update();
 </script>
 </body>
