@@ -281,7 +281,7 @@
 <body>
 <div class="app">
   <header>
-    <div class="eyebrow">7&ndash;32A AC &middot; Time-of-Use Pricing</div>
+    <div class="eyebrow">4&ndash;32A AC &middot; Time-of-Use Pricing</div>
     <h1>AION UT Charge Calculator</h1>
     <p>Time, energy and cost to charge across off-peak and standard rates</p>
   </header>
@@ -589,3 +589,245 @@
   function splitOffPeakMinutes(startTimeStr, totalMinutes, windowStartStr, windowEndStr) {
     if (totalMinutes <= 0) return { offPeak: 0, standard: 0 };
 
+    const startTOD = parseTimeToMinutes(startTimeStr);
+    const S = parseTimeToMinutes(windowStartStr);
+    let E = parseTimeToMinutes(windowEndStr);
+    let D = E - S;
+    if (D <= 0) D += 1440;
+
+    let offPeak = 0;
+    let elapsed = 0;
+    let guard = 0;
+
+    while (elapsed < totalMinutes && guard < 5000) {
+      guard++;
+      const tod = ((startTOD + elapsed) % 1440 + 1440) % 1440;
+      const pos = ((tod - S) % 1440 + 1440) % 1440;
+      let inWindow, stepToBoundary;
+      if (pos < D) {
+        inWindow = true;
+        stepToBoundary = D - pos;
+      } else {
+        inWindow = false;
+        stepToBoundary = 1440 - pos;
+      }
+      const step = Math.min(stepToBoundary, totalMinutes - elapsed);
+      if (inWindow) offPeak += step;
+      elapsed += step;
+    }
+    return { offPeak, standard: totalMinutes - offPeak };
+  }
+
+  function update() {
+    const current = Number(currentRange.value);
+    const target = Number(targetRange.value);
+    const amperage = Number(amperageRange.value);
+    const baseRate = Math.max(0.01, Number(rateInput.value) || 6.92);
+    const rate = baseRate * (amperage / 32);
+    const capacity = Math.max(0.1, Number(capacityInput.value) || 60);
+    const offPeakPrice = Number(tariffInput.value) || 0;
+    const standardPrice = Number(standardTariffInput.value) || 0;
+    const fullRangeKm = Math.max(1, Number(rangeKmInput.value) || 430);
+    const startTime = startTimeInput.value || '22:00';
+
+    timeLabel.textContent = `to ${target}%`;
+    ampRateHint.innerHTML = `&asymp; ${rate.toFixed(2)} kWh/hr`;
+
+    const deltaPct = Math.max(0, target - current);
+    const energyNeeded = (deltaPct / 100) * capacity;
+    const hoursNeeded = rate > 0 ? energyNeeded / rate : 0;
+    const minutesNeeded = hoursNeeded * 60;
+
+    timeOut.textContent = deltaPct === 0 ? 'Already there' : formatHM(minutesNeeded);
+    energyOut.textContent = `${energyNeeded.toFixed(1)} kWh`;
+    rangeOut.textContent = `${Math.round((deltaPct / 100) * fullRangeKm)} km`;
+    currentKm.innerHTML = `&asymp; ${Math.round((current / 100) * fullRangeKm)} km`;
+    targetKm.innerHTML = `&asymp; ${Math.round((target / 100) * fullRangeKm)} km`;
+
+    setRingPosition(ringCurrent, current, 0);
+    setRingPosition(ringAdd, deltaPct, current);
+
+    const angle = (target / 100) * 360;
+    targetMarker.style.transform = `rotate(${angle}deg)`;
+    targetMarker.style.transformOrigin = '110px 110px';
+
+    const split = splitOffPeakMinutes(startTime, minutesNeeded, windowStart.value, windowEnd.value);
+    const offPeakEnergy = rate * (split.offPeak / 60);
+    const standardEnergy = rate * (split.standard / 60);
+    const offPeakCost = offPeakEnergy * offPeakPrice / 100;
+    const standardCost = standardEnergy * standardPrice / 100;
+    const totalCost = offPeakCost + standardCost;
+
+    costOut.textContent = `$${totalCost.toFixed(2)}`;
+    costPerKwhOut.textContent = energyNeeded > 0 ? `${(totalCost / energyNeeded * 100).toFixed(2)}c/kWh` : '\u2014';
+
+    const rangeAddedKm = (deltaPct / 100) * fullRangeKm;
+    const petrolEfficiency = Math.max(0.1, Number(petrolEfficiencyInput.value) || 7.0);
+    if (energyNeeded > 0 && rangeAddedKm > 0) {
+      const costPerKmCents = (totalCost * 100) / rangeAddedKm;
+      const petrolEquivCentsPerL = costPerKmCents / (petrolEfficiency / 100);
+      petrolEquivOut.textContent = `\u2248 ${petrolEquivCentsPerL.toFixed(0)}c/L 91`;
+    } else {
+      petrolEquivOut.textContent = '\u2014';
+    }
+    cbOffPeakSub.textContent = `${windowStart.value}\u2013${windowEnd.value} @ ${offPeakPrice}c/kWh`;
+    cbStandardSub.textContent = `All other times @ ${standardPrice}c/kWh`;
+    cbOffPeakValue.textContent = `${offPeakEnergy.toFixed(1)} kWh \u00b7 $${offPeakCost.toFixed(2)}`;
+    cbStandardValue.textContent = `${standardEnergy.toFixed(1)} kWh \u00b7 $${standardCost.toFixed(2)}`;
+
+    // Energy % and cost % mini pie charts (off-peak vs standard split).
+    if (energyNeeded > 0) {
+      const energyStdPct = (standardEnergy / energyNeeded) * 100;
+      const energyOffPct = 100 - energyStdPct;
+      energyStdWedge.setAttribute('d', pieWedgePath(50, 50, 48, energyStdPct * 3.6));
+      energyOffPctText.textContent = `${energyOffPct.toFixed(0)}%`;
+      energyStdPctText.textContent = `${energyStdPct.toFixed(0)}%`;
+    } else {
+      energyStdWedge.setAttribute('d', '');
+      energyOffPctText.textContent = '\u2014';
+      energyStdPctText.textContent = '\u2014';
+    }
+
+    if (totalCost > 0) {
+      const costStdPct = (standardCost / totalCost) * 100;
+      const costOffPct = 100 - costStdPct;
+      costStdWedge.setAttribute('d', pieWedgePath(50, 50, 48, costStdPct * 3.6));
+      costOffPctText.textContent = `${costOffPct.toFixed(0)}%`;
+      costStdPctText.textContent = `${costStdPct.toFixed(0)}%`;
+    } else {
+      costStdWedge.setAttribute('d', '');
+      costOffPctText.textContent = energyNeeded > 0 ? '100%' : '\u2014';
+      costStdPctText.textContent = energyNeeded > 0 ? '0%' : '\u2014';
+    }
+
+    if (deltaPct === 0) {
+      cbFinishValue.textContent = '\u2014';
+    } else {
+      const startTOD = parseTimeToMinutes(startTime);
+      const finishAbs = startTOD + minutesNeeded;
+      const dayOffset = Math.floor(finishAbs / 1440);
+      const finishClock = formatClock(finishAbs);
+      cbFinishValue.textContent = dayOffset > 0 ? `${finishClock} (+${dayOffset}d)` : finishClock;
+    }
+
+    // Optimal amperage: the lowest amp setting that still finishes exactly by
+    // off-peak end. Going lower risks spilling into tomorrow's standard rate;
+    // going higher just pushes more energy into tonight's standard-rate hours
+    // before midnight for no benefit, since the off-peak window length is fixed.
+    if (deltaPct === 0) {
+      optimalHint.classList.remove('warn');
+      optimalHintText.textContent = 'No charge required';
+      useOptimalBtn.style.display = 'none';
+    } else {
+      const startTOD = parseTimeToMinutes(startTime);
+      const endTOD = parseTimeToMinutes(windowEnd.value);
+      let availMin = endTOD - startTOD;
+      if (availMin <= 0) availMin += 1440;
+      const availHours = availMin / 60;
+      const neededRate = energyNeeded / availHours;
+
+      if (neededRate > baseRate) {
+        optimalHint.classList.add('warn');
+        optimalHintText.textContent = `Even 32A won't finish by ${windowEnd.value} \u2014 needs ${formatHM(hoursNeeded * 60)}`;
+        useOptimalBtn.style.display = 'none';
+        currentOptimalAmps = 32;
+      } else {
+        let optimalAmps = Math.ceil((neededRate / baseRate) * 32);
+        optimalAmps = Math.max(4, Math.min(32, optimalAmps));
+        currentOptimalAmps = optimalAmps;
+        const actualRate = baseRate * (optimalAmps / 32);
+        const actualFinishAbs = startTOD + (energyNeeded / actualRate) * 60;
+        optimalHint.classList.remove('warn');
+        optimalHintText.textContent = `Optimal: ${optimalAmps}A \u00b7 finishes ${formatClock(actualFinishAbs)}`;
+        useOptimalBtn.style.display = (optimalAmps === amperage) ? 'none' : '';
+      }
+    }
+
+    // Level 1 vs Level 2 decision.
+    // Level 1 is treated as precisely scheduled: it never draws a single watt
+    // outside windowStart-windowEnd, so it's always 100% off-peak, but it's
+    // capped by its fixed (low) amperage and may not finish in time.
+    // Level 2 is evaluated at its own optimal amperage (computed above), run
+    // from the real "start charging at" time, the same way it would actually
+    // behave tonight given its plug-in-triggered start.
+    if (deltaPct === 0) {
+      cdLevel1Cost.textContent = '$0.00';
+      cdLevel1Note.textContent = 'No charge required';
+      cdLevel1Note.classList.remove('warn');
+      cdLevel2Cost.textContent = '$0.00';
+      cdLevel2Note.textContent = 'No charge required';
+      cdLevel1Col.classList.remove('winner');
+      cdLevel2Col.classList.remove('winner');
+      cdVerdict.textContent = 'No charge required tonight';
+    } else {
+      const offWinStartTOD = parseTimeToMinutes(windowStart.value);
+      const offWinEndTOD = parseTimeToMinutes(windowEnd.value);
+      let offWinMin = offWinEndTOD - offWinStartTOD;
+      if (offWinMin <= 0) offWinMin += 1440;
+      const offWinHours = offWinMin / 60;
+
+      const level1Amps = Math.max(1, Number(level1AmpsInput.value) || 10);
+      const level1Rate = baseRate * (level1Amps / 32);
+      cdLevel1Rate.textContent = `${level1Amps}A \u00b7 ${level1Rate.toFixed(2)} kWh/hr`;
+      const level1MaxEnergy = level1Rate * offWinHours;
+
+      let level1Cost, level1Feasible;
+      if (energyNeeded <= level1MaxEnergy) {
+        level1Feasible = true;
+        const level1DurationMin = (energyNeeded / level1Rate) * 60;
+        level1Cost = energyNeeded * offPeakPrice / 100;
+        const level1FinishAbs = offWinStartTOD + level1DurationMin;
+        cdLevel1Cost.textContent = `$${level1Cost.toFixed(2)}`;
+        cdLevel1Note.textContent = `Finishes ${formatClock(level1FinishAbs)} \u00b7 100% off-peak`;
+        cdLevel1Note.classList.remove('warn');
+      } else {
+        level1Feasible = false;
+        const delivered = level1MaxEnergy;
+        const shortfallPct = ((energyNeeded - delivered) / energyNeeded) * 100;
+        level1Cost = delivered * offPeakPrice / 100;
+        cdLevel1Cost.textContent = `$${level1Cost.toFixed(2)}`;
+        cdLevel1Note.textContent = `Only reaches ${delivered.toFixed(1)} kWh by ${windowEnd.value} \u2014 ${shortfallPct.toFixed(0)}% short`;
+        cdLevel1Note.classList.add('warn');
+      }
+
+      const level2Rate = baseRate * (currentOptimalAmps / 32);
+      cdLevel2Rate.textContent = `${currentOptimalAmps}A \u00b7 ${level2Rate.toFixed(2)} kWh/hr`;
+      const level2DurationMin = (energyNeeded / level2Rate) * 60;
+      const level2Split = splitOffPeakMinutes(startTime, level2DurationMin, windowStart.value, windowEnd.value);
+      const level2OffPeakEnergy = level2Rate * (level2Split.offPeak / 60);
+      const level2StandardEnergy = level2Rate * (level2Split.standard / 60);
+      const level2Cost = level2OffPeakEnergy * offPeakPrice / 100 + level2StandardEnergy * standardPrice / 100;
+      const level2StartTOD = parseTimeToMinutes(startTime);
+      const level2FinishAbs = level2StartTOD + level2DurationMin;
+      const level2DayOffset = Math.floor(level2FinishAbs / 1440);
+      cdLevel2Cost.textContent = `$${level2Cost.toFixed(2)}`;
+      cdLevel2Note.textContent = `Finishes ${formatClock(level2FinishAbs)}${level2DayOffset > 0 ? ` (+${level2DayOffset}d)` : ''}`;
+      cdLevel2Note.classList.remove('warn');
+
+      cdLevel1Col.classList.remove('winner');
+      cdLevel2Col.classList.remove('winner');
+      if (!level1Feasible) {
+        cdLevel2Col.classList.add('winner');
+        cdVerdict.textContent = `Use Level 2 \u2014 Level 1 can't fully charge by ${windowEnd.value}`;
+      } else if (level1Cost <= level2Cost) {
+        cdLevel1Col.classList.add('winner');
+        cdVerdict.textContent = `Use Level 1 \u00b7 saves $${(level2Cost - level1Cost).toFixed(2)}`;
+      } else {
+        cdLevel2Col.classList.add('winner');
+        cdVerdict.textContent = `Use Level 2 \u00b7 saves $${(level1Cost - level2Cost).toFixed(2)}`;
+      }
+    }
+  }
+
+  // Default "Start charging at" to the current local time on page load.
+  (function setStartTimeToNow() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    startTimeInput.value = `${hh}:${mm}`;
+  })();
+
+  update();
+</script>
+</body>
+</html>
