@@ -55,12 +55,23 @@
     padding: 24px;
   }
 
-  .gauge-wrap { position: relative; width: 220px; height: 220px; margin: 0 auto 8px; }
+  .gauge-wrap { position: relative; width: 162px; height: 162px; flex-shrink: 0; }
   .gauge-wrap svg { width: 100%; height: 100%; }
   .ring-track { fill: none; stroke: var(--track); stroke-width: 14; }
   .ring-current { fill: none; stroke: var(--base-fill); stroke-width: 14; stroke-linecap: round; transition: stroke-dasharray 0.4s ease; }
   .ring-add { fill: none; stroke: var(--accent); stroke-width: 14; stroke-linecap: round; transition: stroke-dasharray 0.4s ease, stroke-dashoffset 0.4s ease; }
   .target-marker { stroke: var(--text); stroke-width: 2; transition: transform 0.4s ease; }
+
+  .gauge-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 4px; }
+
+  .mini-pie-col { display: flex; flex-direction: column; gap: 12px; }
+  .mini-pie { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .mini-pie svg { width: 58px; height: 58px; }
+  .mp-base { fill: var(--good); }
+  .mp-std-wedge { fill: var(--warn); }
+  .mini-pie-title { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mini-pie-legend { font-family: var(--font-mono); font-size: 10px; color: var(--text); display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .mini-pie-legend .cb-dot { margin-right: 0; }
 
   .gauge-center {
     position: absolute; inset: 0;
@@ -68,14 +79,14 @@
   }
   .gauge-center .time {
     font-family: var(--font-mono);
-    font-size: 28px;
+    font-size: 20px;
     font-weight: 600;
     letter-spacing: -0.02em;
-    max-width: 150px;
+    max-width: 120px;
     text-align: center;
     line-height: 1.15;
   }
-  .gauge-center .time-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .gauge-center .time-label { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
 
   .stats-row { display: flex; gap: 12px; margin-top: 20px; }
   .stat {
@@ -247,16 +258,43 @@
   </header>
 
   <div class="card">
-    <div class="gauge-wrap">
-      <svg viewBox="0 0 220 220">
-        <circle class="ring-track" cx="110" cy="110" r="95"></circle>
-        <circle id="ringCurrent" class="ring-current" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
-        <circle id="ringAdd" class="ring-add" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
-        <line id="targetMarker" class="target-marker" x1="110" y1="6" x2="110" y2="28"></line>
-      </svg>
-      <div class="gauge-center">
-        <div class="time" id="timeOut">0h 0m</div>
-        <div class="time-label" id="timeLabel">to 100%</div>
+    <div class="gauge-row">
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 220 220">
+          <circle class="ring-track" cx="110" cy="110" r="95"></circle>
+          <circle id="ringCurrent" class="ring-current" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
+          <circle id="ringAdd" class="ring-add" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
+          <line id="targetMarker" class="target-marker" x1="110" y1="6" x2="110" y2="28"></line>
+        </svg>
+        <div class="gauge-center">
+          <div class="time" id="timeOut">0h 0m</div>
+          <div class="time-label" id="timeLabel">to 100%</div>
+        </div>
+      </div>
+
+      <div class="mini-pie-col">
+        <div class="mini-pie">
+          <svg viewBox="0 0 100 100">
+            <circle class="mp-base" cx="50" cy="50" r="48"></circle>
+            <path id="energyStdWedge" class="mp-std-wedge"></path>
+          </svg>
+          <div class="mini-pie-title">Energy %</div>
+          <div class="mini-pie-legend">
+            <span class="cb-dot off"></span><span id="energyOffPctText">0%</span>
+            <span class="cb-dot std"></span><span id="energyStdPctText">0%</span>
+          </div>
+        </div>
+        <div class="mini-pie">
+          <svg viewBox="0 0 100 100">
+            <circle class="mp-base" cx="50" cy="50" r="48"></circle>
+            <path id="costStdWedge" class="mp-std-wedge"></path>
+          </svg>
+          <div class="mini-pie-title">Cost %</div>
+          <div class="mini-pie-legend">
+            <span class="cb-dot off"></span><span id="costOffPctText">0%</span>
+            <span class="cb-dot std"></span><span id="costStdPctText">0%</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -272,6 +310,7 @@
       <div class="stat">
         <div class="value" id="costOut">$0.00</div>
         <div class="value-sub" id="costPerKwhOut">&mdash;</div>
+        <div class="value-sub" id="petrolEquivOut">&mdash;</div>
         <div class="label">Total cost</div>
       </div>
     </div>
@@ -351,7 +390,10 @@
           <label>Full range (km)</label>
           <input type="number" id="rangeKmInput" value="430" step="1">
         </div>
-        <div class="field"></div>
+        <div class="field">
+          <label>Petrol comparison (L/100km)</label>
+          <input type="number" id="petrolEfficiencyInput" value="7.0" step="0.1">
+        </div>
         <div class="field">
           <label>Off-peak start</label>
           <input type="time" id="windowStart" value="00:00">
@@ -394,6 +436,8 @@
   const rangeOut = document.getElementById('rangeOut');
   const costOut = document.getElementById('costOut');
   const costPerKwhOut = document.getElementById('costPerKwhOut');
+  const petrolEquivOut = document.getElementById('petrolEquivOut');
+  const petrolEfficiencyInput = document.getElementById('petrolEfficiencyInput');
   const currentKm = document.getElementById('currentKm');
   const targetKm = document.getElementById('targetKm');
   const ampRateHint = document.getElementById('ampRateHint');
@@ -406,6 +450,12 @@
   const cbOffPeakValue = document.getElementById('cbOffPeakValue');
   const cbStandardValue = document.getElementById('cbStandardValue');
   const cbFinishValue = document.getElementById('cbFinishValue');
+  const energyStdWedge = document.getElementById('energyStdWedge');
+  const energyOffPctText = document.getElementById('energyOffPctText');
+  const energyStdPctText = document.getElementById('energyStdPctText');
+  const costStdWedge = document.getElementById('costStdWedge');
+  const costOffPctText = document.getElementById('costOffPctText');
+  const costStdPctText = document.getElementById('costStdPctText');
 
   function bindPair(rangeEl, numEl, min, max) {
     rangeEl.addEventListener('input', () => { numEl.value = rangeEl.value; update(); });
@@ -427,7 +477,7 @@
     update();
   });
 
-  [rateInput, capacityInput, tariffInput, standardTariffInput, rangeKmInput, windowStart, windowEnd, startTimeInput].forEach(el => {
+  [rateInput, capacityInput, tariffInput, standardTariffInput, rangeKmInput, petrolEfficiencyInput, windowStart, windowEnd, startTimeInput].forEach(el => {
     el.addEventListener('input', update);
   });
 
@@ -453,6 +503,22 @@
     const len = CIRC * (lengthPct / 100);
     el.style.strokeDasharray = `${len} ${CIRC - len}`;
     el.style.strokeDashoffset = `${-CIRC * (offsetPct / 100)}`;
+  }
+
+  // Builds an SVG path for a pie wedge starting at 12 o'clock, sweeping
+  // `sweepDeg` degrees clockwise. Used to draw the standard-rate slice on
+  // top of a solid off-peak-coloured base circle.
+  function pieWedgePath(cx, cy, r, sweepDeg) {
+    if (sweepDeg <= 0) return '';
+    if (sweepDeg >= 360) sweepDeg = 359.999;
+    function point(angleDeg) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+    const start = point(0);
+    const end = point(sweepDeg);
+    const largeArcFlag = sweepDeg > 180 ? 1 : 0;
+    return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
   }
 
   // Splits a charging session into minutes that fall inside the daily off-peak
@@ -532,10 +598,45 @@
 
     costOut.textContent = `$${totalCost.toFixed(2)}`;
     costPerKwhOut.textContent = energyNeeded > 0 ? `${(totalCost / energyNeeded * 100).toFixed(2)}c/kWh` : '\u2014';
+
+    const rangeAddedKm = (deltaPct / 100) * fullRangeKm;
+    const petrolEfficiency = Math.max(0.1, Number(petrolEfficiencyInput.value) || 7.0);
+    if (energyNeeded > 0 && rangeAddedKm > 0) {
+      const costPerKmCents = (totalCost * 100) / rangeAddedKm;
+      const petrolEquivCentsPerL = costPerKmCents / (petrolEfficiency / 100);
+      petrolEquivOut.textContent = `\u2248 ${petrolEquivCentsPerL.toFixed(0)}c/L 91`;
+    } else {
+      petrolEquivOut.textContent = '\u2014';
+    }
     cbOffPeakSub.textContent = `${windowStart.value}\u2013${windowEnd.value} @ ${offPeakPrice}c/kWh`;
     cbStandardSub.textContent = `All other times @ ${standardPrice}c/kWh`;
     cbOffPeakValue.textContent = `${offPeakEnergy.toFixed(1)} kWh \u00b7 $${offPeakCost.toFixed(2)}`;
     cbStandardValue.textContent = `${standardEnergy.toFixed(1)} kWh \u00b7 $${standardCost.toFixed(2)}`;
+
+    // Energy % and cost % mini pie charts (off-peak vs standard split).
+    if (energyNeeded > 0) {
+      const energyStdPct = (standardEnergy / energyNeeded) * 100;
+      const energyOffPct = 100 - energyStdPct;
+      energyStdWedge.setAttribute('d', pieWedgePath(50, 50, 48, energyStdPct * 3.6));
+      energyOffPctText.textContent = `${energyOffPct.toFixed(0)}%`;
+      energyStdPctText.textContent = `${energyStdPct.toFixed(0)}%`;
+    } else {
+      energyStdWedge.setAttribute('d', '');
+      energyOffPctText.textContent = '\u2014';
+      energyStdPctText.textContent = '\u2014';
+    }
+
+    if (totalCost > 0) {
+      const costStdPct = (standardCost / totalCost) * 100;
+      const costOffPct = 100 - costStdPct;
+      costStdWedge.setAttribute('d', pieWedgePath(50, 50, 48, costStdPct * 3.6));
+      costOffPctText.textContent = `${costOffPct.toFixed(0)}%`;
+      costStdPctText.textContent = `${costStdPct.toFixed(0)}%`;
+    } else {
+      costStdWedge.setAttribute('d', '');
+      costOffPctText.textContent = energyNeeded > 0 ? '100%' : '\u2014';
+      costStdPctText.textContent = energyNeeded > 0 ? '0%' : '\u2014';
+    }
 
     if (deltaPct === 0) {
       cbFinishValue.textContent = '\u2014';
