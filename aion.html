@@ -396,19 +396,19 @@
     <div class="inputs">
       <div class="input-group">
         <div class="input-head">
-          <label>Current charge</label>
-          <div class="num-field"><input type="number" id="currentNum" min="0" max="100" value="30"><span>%</span></div>
+          <label>Current range</label>
+          <div class="num-field"><input type="number" id="currentNum" min="0" max="430" value="129"><span>km</span></div>
         </div>
-        <input type="range" id="currentRange" min="0" max="100" value="30">
-        <div class="km-hint" id="currentKm">&asymp; 0 km</div>
+        <input type="range" id="currentRange" min="0" max="430" value="129">
+        <div class="km-hint" id="currentKm">≈ 30%</div>
       </div>
       <div class="input-group">
         <div class="input-head">
-          <label>Target charge</label>
-          <div class="num-field"><input type="number" id="targetNum" min="0" max="100" value="100"><span>%</span></div>
+          <label>Target range</label>
+          <div class="num-field"><input type="number" id="targetNum" min="0" max="430" value="430"><span>km</span></div>
         </div>
-        <input type="range" id="targetRange" min="0" max="100" value="100">
-        <div class="km-hint" id="targetKm">&asymp; 0 km</div>
+        <input type="range" id="targetRange" min="0" max="430" value="430">
+        <div class="km-hint" id="targetKm">≈ 100%</div>
       </div>
       <div class="input-group">
         <div class="input-head">
@@ -548,8 +548,8 @@
       update();
     });
   }
-  bindPair(currentRange, currentNum, 0, 100);
-  bindPair(targetRange, targetNum, 0, 100);
+  bindPair(currentRange, currentNum, 0, 430);
+  bindPair(targetRange, targetNum, 0, 430);
   bindPair(amperageRange, amperageNum, 4, 32);
 
   useOptimalBtn.addEventListener('click', () => {
@@ -558,7 +558,17 @@
     update();
   });
 
-  [rateInput, capacityInput, tariffInput, standardTariffInput, rangeKmInput, petrolEfficiencyInput, level1AmpsInput, windowStart, windowEnd, startTimeInput].forEach(el => {
+  rangeKmInput.addEventListener('input', () => {
+    const maxKm = Math.max(1, Number(rangeKmInput.value) || 430);
+    [currentRange, targetRange].forEach(el => { el.max = maxKm; });
+    [currentNum, targetNum].forEach(el => { el.max = maxKm; });
+    // Clamp current values to new max
+    if (Number(currentRange.value) > maxKm) { currentRange.value = maxKm; currentNum.value = maxKm; }
+    if (Number(targetRange.value) > maxKm) { targetRange.value = maxKm; targetNum.value = maxKm; }
+    update();
+  });
+
+  [rateInput, capacityInput, tariffInput, standardTariffInput, petrolEfficiencyInput, level1AmpsInput, windowStart, windowEnd, startTimeInput].forEach(el => {
     el.addEventListener('input', update);
   });
 
@@ -638,8 +648,8 @@
   }
 
   function update() {
-    const current = Number(currentRange.value);
-    const target = Number(targetRange.value);
+    const currentKmVal = Number(currentRange.value);
+    const targetKmVal = Number(targetRange.value);
     const amperage = Number(amperageRange.value);
     const baseRate = Math.max(0.01, Number(rateInput.value) || 6.92);
     const rate = baseRate * (amperage / 32);
@@ -649,8 +659,16 @@
     const fullRangeKm = Math.max(1, Number(rangeKmInput.value) || 430);
     const startTime = startTimeInput.value || '22:00';
 
-    timeLabel.textContent = `to ${target}%`;
+    // Derive % from km for all downstream calculations
+    const current = Math.min(100, (currentKmVal / fullRangeKm) * 100);
+    const target = Math.min(100, (targetKmVal / fullRangeKm) * 100);
+
+    timeLabel.textContent = `to ${Math.round(target)}%`;
     ampRateHint.innerHTML = `&asymp; ${rate.toFixed(2)} kWh/hr`;
+
+    // Secondary hints now show %
+    currentKm.textContent = `\u2248 ${Math.round(current)}%`;
+    targetKm.textContent = `\u2248 ${Math.round(target)}%`;
 
     const deltaPct = Math.max(0, target - current);
     const energyNeeded = (deltaPct / 100) * capacity;
@@ -660,8 +678,6 @@
     timeOut.textContent = deltaPct === 0 ? 'Already there' : formatHM(minutesNeeded);
     energyOut.textContent = `${energyNeeded.toFixed(1)} kWh`;
     rangeOut.textContent = `${Math.round((deltaPct / 100) * fullRangeKm)} km`;
-    currentKm.innerHTML = `&asymp; ${Math.round((current / 100) * fullRangeKm)} km`;
-    targetKm.innerHTML = `&asymp; ${Math.round((target / 100) * fullRangeKm)} km`;
 
     setRingPosition(ringCurrent, current, 0);
     setRingPosition(ringAdd, deltaPct, current);
