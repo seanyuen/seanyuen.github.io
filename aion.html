@@ -290,52 +290,6 @@
   </header>
 
   <div class="card">
-    <div class="viz-row">
-      <div class="viz-col">
-        <div class="viz-title">Charge</div>
-        <div class="viz-circle">
-          <svg viewBox="0 0 220 220">
-            <circle class="ring-track" cx="110" cy="110" r="95"></circle>
-            <circle id="ringCurrent" class="ring-current" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
-            <circle id="ringAdd" class="ring-add" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
-            <line id="targetMarker" class="target-marker" x1="110" y1="6" x2="110" y2="28"></line>
-          </svg>
-          <div class="gauge-center">
-            <div class="time" id="timeOut">0h 0m</div>
-            <div class="time-label" id="timeLabel">to 100%</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="viz-col">
-        <div class="viz-title">Energy %</div>
-        <div class="viz-circle">
-          <svg viewBox="0 0 100 100">
-            <circle class="mp-base" cx="50" cy="50" r="48"></circle>
-            <path id="energyStdWedge" class="mp-std-wedge"></path>
-          </svg>
-        </div>
-        <div class="viz-legend">
-          <span class="cb-dot off"></span><span id="energyOffPctText">0%</span>
-          <span class="cb-dot std"></span><span id="energyStdPctText">0%</span>
-        </div>
-      </div>
-
-      <div class="viz-col">
-        <div class="viz-title">Cost %</div>
-        <div class="viz-circle">
-          <svg viewBox="0 0 100 100">
-            <circle class="mp-base" cx="50" cy="50" r="48"></circle>
-            <path id="costStdWedge" class="mp-std-wedge"></path>
-          </svg>
-        </div>
-        <div class="viz-legend">
-          <span class="cb-dot off"></span><span id="costOffPctText">0%</span>
-          <span class="cb-dot std"></span><span id="costStdPctText">0%</span>
-        </div>
-      </div>
-    </div>
-
     <div class="stats-row">
       <div class="stat">
         <div class="value" id="energyOut">0.0 kWh</div>
@@ -352,6 +306,53 @@
         <div class="label">Total cost</div>
       </div>
     </div>
+
+    <details class="collapse-panel">
+      <summary>Charge / energy / cost split</summary>
+      <div class="viz-row">
+        <div class="viz-col">
+          <div class="viz-title">Charge</div>
+          <div class="viz-circle">
+            <svg viewBox="0 0 220 220">
+              <circle class="ring-track" cx="110" cy="110" r="95"></circle>
+              <circle id="ringCurrent" class="ring-current" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
+              <circle id="ringAdd" class="ring-add" cx="110" cy="110" r="95" transform="rotate(-90 110 110)"></circle>
+              <line id="targetMarker" class="target-marker" x1="110" y1="6" x2="110" y2="28"></line>
+            </svg>
+            <div class="gauge-center">
+              <div class="time" id="timeOut">0h 0m</div>
+              <div class="time-label" id="timeLabel">to 100%</div>
+            </div>
+          </div>
+        </div>
+        <div class="viz-col">
+          <div class="viz-title">Energy %</div>
+          <div class="viz-circle">
+            <svg viewBox="0 0 100 100">
+              <circle class="mp-base" cx="50" cy="50" r="48"></circle>
+              <path id="energyStdWedge" class="mp-std-wedge"></path>
+            </svg>
+          </div>
+          <div class="viz-legend">
+            <span class="cb-dot off"></span><span id="energyOffPctText">0%</span>
+            <span class="cb-dot std"></span><span id="energyStdPctText">0%</span>
+          </div>
+        </div>
+        <div class="viz-col">
+          <div class="viz-title">Cost %</div>
+          <div class="viz-circle">
+            <svg viewBox="0 0 100 100">
+              <circle class="mp-base" cx="50" cy="50" r="48"></circle>
+              <path id="costStdWedge" class="mp-std-wedge"></path>
+            </svg>
+          </div>
+          <div class="viz-legend">
+            <span class="cb-dot off"></span><span id="costOffPctText">0%</span>
+            <span class="cb-dot std"></span><span id="costStdPctText">0%</span>
+          </div>
+        </div>
+      </div>
+    </details>
 
     <details class="collapse-panel">
       <summary>Off-peak / standard breakdown</summary>
@@ -371,7 +372,7 @@
       </div>
     </details>
 
-    <details class="collapse-panel">
+    <details class="collapse-panel" open>
       <summary>Level 1 vs Level 2 charger</summary>
       <div class="charger-decision">
         <div class="cd-row">
