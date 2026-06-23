@@ -93,8 +93,7 @@
   .field:focus-within { border-color: var(--good); }
   .field-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
   .field-inner { display: flex; align-items: baseline; gap: 3px; }
-  .field input[type="number"],
-  .field input[type="time"] {
+  .field input[type="number"] {
     background: transparent;
     border: none;
     color: var(--text);
@@ -107,10 +106,22 @@
     padding: 0;
     -moz-appearance: textfield;
   }
-  .field input[type="time"] { font-size: 30px; }
   .field input[type="number"]::-webkit-inner-spin-button,
   .field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
-  .field input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cursor: pointer; width: 18px; }
+
+  .field input[type="time"] {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 34px;
+    font-weight: 700;
+    width: 100%;
+    min-width: 0;
+    outline: none;
+    padding: 0;
+  }
+  .field input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cursor: pointer; }
   .field-unit { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--dim); flex-shrink: 0; }
 
   /* Amperage field with Optimise button */
@@ -133,9 +144,23 @@
   }
   .amp-optimise:hover { background: rgba(78, 203, 113, 0.18); }
 
-  /* L2 amperage row, hidden when L1 active */
-  .l2-only { display: flex; }
+  /* 2×2 equal grid for the charging window section */
+  .window-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  /* Spacer matches the height of the amp-optimise button so all four boxes are equal height */
+  .field-spacer {
+    margin-top: 8px;
+    height: 29px; /* matches amp-optimise padding+font+border */
+  }
+
+  /* L2-only fields: hide as grid items (display:none collapses them cleanly) */
+  .l2-only { display: flex; flex-direction: column; }
   .l1-mode .l2-only { display: none; }
+  /* When L1, the time fields don't need the spacer */
+  .l1-mode .field-spacer { display: none; }
 
   /* ── RESULT ── */
   .result-card {
@@ -284,24 +309,22 @@
     <!-- 3. CHARGING WINDOW -->
     <div class="card-section">
       <div class="section-label">Charging window</div>
-      <div class="field-row">
+      <div class="window-grid">
         <div class="field">
           <div class="field-label">Start</div>
           <div class="field-inner">
-            <input type="time" id="startTime" value="23:00">
+            <input type="time" id="startTime" value="00:00">
           </div>
+          <div class="field-spacer"></div>
         </div>
         <div class="field">
           <div class="field-label">End</div>
           <div class="field-inner">
             <input type="time" id="endTime" value="06:00">
           </div>
+          <div class="field-spacer"></div>
         </div>
-      </div>
-
-      <!-- L2 only: amperage -->
-      <div class="field-row l2-only" style="margin-top:8px;" id="ampRow">
-        <div class="field">
+        <div class="field l2-only" id="ampRow">
           <div class="field-label">Amperage</div>
           <div class="field-inner">
             <input type="number" id="amperageNum" min="4" max="32" value="32">
@@ -309,13 +332,13 @@
           </div>
           <button class="amp-optimise" id="optimiseBtn" onclick="applyOptimal()">Optimise</button>
         </div>
-        <div class="field" style="flex:1.2;">
+        <div class="field l2-only" id="rateRow">
           <div class="field-label">Rate</div>
-          <div class="field-inner" style="padding-top:6px;">
-            <span style="font-family:var(--mono);font-size:22px;font-weight:700;" id="rateDisplay">6.92</span>
+          <div class="field-inner">
+            <span style="font-family:var(--mono);font-size:34px;font-weight:700;color:var(--dim);" id="rateDisplay">6.92</span>
             <span class="field-unit">kWh/hr</span>
           </div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:4px;" id="optimalNote">&mdash;</div>
+          <div class="amp-optimise" id="optimalNote" style="cursor:default;background:transparent;border-color:transparent;color:var(--dim);text-align:left;">&mdash;</div>
         </div>
       </div>
     </div>
@@ -407,6 +430,17 @@
   let charger = 'L2';
 
   // ── HELPERS ──
+  function getTimeMins(id) {
+    const val = document.getElementById(id).value || '00:00';
+    const [h, m] = val.split(':').map(Number);
+    return h * 60 + m;
+  }
+  function setTime(id, totalMins) {
+    const t = ((Math.round(totalMins) % 1440) + 1440) % 1440;
+    const h = String(Math.floor(t / 60)).padStart(2, '0');
+    const m = String(t % 60).padStart(2, '0');
+    document.getElementById(id).value = `${h}:${m}`;
+  }
   function toMins(t) {
     const [h, m] = (t || '00:00').split(':').map(Number);
     return h * 60 + m;
@@ -443,6 +477,12 @@
     document.getElementById('btnL1').classList.toggle('active', c === 'L1');
     document.getElementById('btnL2').classList.toggle('active', c === 'L2');
     document.getElementById('mainCard').classList.toggle('l1-mode', c === 'L1');
+    if (c === 'L1') {
+      setTime('startTime', 0); // midnight
+    } else {
+      const now = new Date();
+      setTime('startTime', now.getHours() * 60 + now.getMinutes());
+    }
     update();
   }
 
@@ -489,13 +529,12 @@
     const currentEnergy = (currentPct / 100) * capacity;
     const maxAddable = capacity - currentEnergy;
 
-    const startMins = toMins(document.getElementById('startTime').value);
-    const endMins   = toMins(document.getElementById('endTime').value);
+    const startMins = getTimeMins('startTime');
+    const endMins   = getTimeMins('endTime');
     let windowMins = endMins - startMins;
     if (windowMins <= 0) windowMins += 1440;
 
-    const endTimeLbl = document.getElementById('endTime').value || '06:00';
-    document.getElementById('endTimeLbl').textContent = endTimeLbl;
+    document.getElementById('endTimeLbl').textContent = document.getElementById('endTime').value || '06:00';
 
     let energyAdded, offPeakMins, standardMins, chargeDurationMins, amps;
 
@@ -603,11 +642,7 @@
 
   // ── INIT ──
   (function init() {
-    const now = new Date();
-    const hh  = String(now.getHours()).padStart(2, '0');
-    const mm  = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById('startTime').value = `${hh}:${mm}`;
-    selectCharger('L2');
+    selectCharger('L2'); // sets start time to current time automatically
   })();
 </script>
 </body>
