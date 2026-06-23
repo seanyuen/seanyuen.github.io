@@ -223,15 +223,27 @@
   details[open] summary::before { content: '−'; }
   details .panel-body { padding: 0 14px 14px; }
 
-  /* breakdown table */
-  .breakdown { display: flex; flex-direction: column; gap: 9px; }
-  .bk-row { display: flex; justify-content: space-between; align-items: center; }
-  .bk-row + .bk-row { border-top: 1px solid var(--card-border); padding-top: 9px; }
-  .bk-label { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
-  .bk-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  /* breakdown boxes */
+  .breakdown { display: flex; gap: 8px; }
+  .bk-box {
+    flex: 1;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .bk-box.off-peak { border-color: rgba(78,203,113,0.25); }
+  .bk-box.standard { border-color: rgba(240,112,64,0.2); }
+  .bk-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .bk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .bk-dot.off { background: var(--good); }
   .bk-dot.std { background: var(--warn); }
-  .bk-value { font-family: var(--mono); font-size: 16px; font-weight: 600; text-align: right; }
+  .bk-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  .bk-cost { font-family: var(--mono); font-size: 28px; font-weight: 700; line-height: 1; }
+  .bk-box.off-peak .bk-cost { color: var(--good); }
+  .bk-box.standard .bk-cost { color: var(--warn); }
+  .bk-kwh { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-top: 4px; }
+  .bk-time { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-top: 2px; }
 
   /* settings grid */
   .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -378,17 +390,17 @@
       <summary>Cost breakdown</summary>
       <div class="panel-body">
         <div class="breakdown">
-          <div class="bk-row">
-            <span class="bk-label"><span class="bk-dot off"></span>Off-peak</span>
-            <span class="bk-value" id="bkOffPeak">—</span>
+          <div class="bk-box off-peak">
+            <div class="bk-header"><span class="bk-dot off"></span><span class="bk-title">Off-peak</span></div>
+            <div class="bk-cost" id="bkOffCost">$0.00</div>
+            <div class="bk-kwh" id="bkOffKwh">0.0 kWh</div>
+            <div class="bk-time" id="bkOffTime">—</div>
           </div>
-          <div class="bk-row">
-            <span class="bk-label"><span class="bk-dot std"></span>Standard</span>
-            <span class="bk-value" id="bkStandard">—</span>
-          </div>
-          <div class="bk-row">
-            <span class="bk-label" style="font-size:14px;color:var(--dim)">Finishes</span>
-            <span class="bk-value" id="bkFinish">—</span>
+          <div class="bk-box standard">
+            <div class="bk-header"><span class="bk-dot std"></span><span class="bk-title">Standard</span></div>
+            <div class="bk-cost" id="bkStdCost">$0.00</div>
+            <div class="bk-kwh" id="bkStdKwh">0.0 kWh</div>
+            <div class="bk-time" id="bkFinish">—</div>
           </div>
         </div>
       </div>
@@ -606,11 +618,14 @@
     document.getElementById('petrolEquiv').textContent = energyAdded > 0 ? `≈ ${Math.round(petrolEquivCL)}c/L 91` : '—';
 
     // Breakdown
-    document.getElementById('bkOffPeak').textContent  = `${offPeakEnergy.toFixed(1)} kWh · $${offPeakCost.toFixed(2)}`;
-    document.getElementById('bkStandard').textContent = `${Math.max(0,standardEnergy).toFixed(1)} kWh · $${standardCost.toFixed(2)}`;
+    document.getElementById('bkOffCost').textContent = `$${offPeakCost.toFixed(2)}`;
+    document.getElementById('bkOffKwh').textContent  = `${offPeakEnergy.toFixed(1)} kWh`;
+    document.getElementById('bkOffTime').textContent = offPeakMins > 0 ? fmtHM(offPeakMins) : '—';
+    document.getElementById('bkStdCost').textContent = `$${standardCost.toFixed(2)}`;
+    document.getElementById('bkStdKwh').textContent  = `${Math.max(0, standardEnergy).toFixed(1)} kWh`;
     const finishTime = startMins + chargeDurationMins;
     const dayOver    = finishTime >= 1440 * 2 ? ' (+2d)' : finishTime >= 1440 ? ' (+1d)' : '';
-    document.getElementById('bkFinish').textContent = chargeDurationMins > 0 ? toHHMM(finishTime) + dayOver : '—';
+    document.getElementById('bkFinish').textContent = chargeDurationMins > 0 ? `Finishes ${toHHMM(finishTime)}${dayOver}` : '—';
 
     // Status
     const sl = document.getElementById('statusLine');
