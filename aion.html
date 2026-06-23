@@ -150,17 +150,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  /* Spacer matches the height of the amp-optimise button so all four boxes are equal height */
-  .field-spacer {
-    margin-top: 8px;
-    height: 29px; /* matches amp-optimise padding+font+border */
-  }
-
   /* L2-only fields: hide as grid items (display:none collapses them cleanly) */
   .l2-only { display: flex; flex-direction: column; }
   .l1-mode .l2-only { display: none; }
-  /* When L1, the time fields don't need the spacer */
-  .l1-mode .field-spacer { display: none; }
 
   /* ── RESULT ── */
   .result-card {
@@ -315,14 +307,12 @@
           <div class="field-inner">
             <input type="time" id="startTime" value="00:00">
           </div>
-          <div class="field-spacer"></div>
         </div>
         <div class="field">
           <div class="field-label">End</div>
           <div class="field-inner">
             <input type="time" id="endTime" value="06:00">
           </div>
-          <div class="field-spacer"></div>
         </div>
         <div class="field l2-only" id="ampRow">
           <div class="field-label">Amperage</div>
