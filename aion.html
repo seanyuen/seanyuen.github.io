@@ -242,18 +242,6 @@
   .status-strip.warn { background: var(--status-err-bg); color: var(--status-err-fg); border-color: var(--status-err-bd); }
   .ss-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
-  /* ── DC: OPTIMISE BUTTON ── */
-  .dc-optimise-wrap { padding: 0 12px 12px; }
-  .dc-optimise-btn {
-    width: 100%; padding: 15px;
-    background: var(--opt-pill-bg); border: 1.5px solid var(--opt-pill-bd);
-    border-radius: 14px; color: var(--opt-pill-fg);
-    font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
-    transition: background 0.12s;
-  }
-  .dc-optimise-btn:hover { background: var(--opt-pill-hv); }
-
   /* ── DC: RESULT ── */
   .dc-result {
     background: var(--track); border: 1px solid var(--card-border);
@@ -457,35 +445,33 @@
 <div class="tab-panel" id="tabDc">
 <div class="scroll-area">
 
+  <!-- INPUTS: all in one card, 2×2 grid -->
   <div class="card">
-    <div class="card-title">Current battery</div>
-    <div class="input-row">
+    <div class="input-row" style="padding-top:12px;">
       <div class="input-field">
-        <span class="if-label">Range</span>
+        <span class="if-label">Current range</span>
         <div class="if-inner">
           <input type="number" id="dc_currentKm" min="0" max="430" value="60">
           <span class="if-unit">km</span>
         </div>
+        <div class="if-sub" id="dc_currentPctHint">14% SOC</div>
       </div>
       <div class="input-field">
-        <span class="if-label">SOC</span>
-        <div class="if-inner">
-          <input type="number" id="dc_currentPct" min="0" max="100" value="14">
-          <span class="if-unit">%</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Journey</div>
-    <div class="input-row">
-      <div class="input-field">
-        <span class="if-label">Distance to home</span>
+        <span class="if-label">Distance home</span>
         <div class="if-inner">
           <input type="number" id="dc_distKm" min="0" max="500" value="80">
           <span class="if-unit">km</span>
         </div>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-field">
+        <span class="if-label">Price / kWh</span>
+        <div class="if-inner">
+          <span class="if-prefix">$</span>
+          <input type="number" id="dc_price" min="0" max="5" step="0.01" value="0.55">
+        </div>
+        <div class="if-sub" id="dc_priceHint">55c/kWh</div>
       </div>
       <div class="input-field">
         <span class="if-label">Arrive home with</span>
@@ -498,67 +484,52 @@
     </div>
   </div>
 
+  <!-- LIVE RESULT — always visible -->
   <div class="card">
-    <div class="card-title">Charger</div>
-    <div class="input-row">
-      <div class="input-field">
-        <span class="if-label">Price per kWh</span>
-        <div class="if-inner">
-          <span class="if-prefix">$</span>
-          <input type="number" id="dc_price" min="0" max="5" step="0.01" value="0.55">
-        </div>
-        <div class="if-sub" id="dc_priceHint">≈ 55c/kWh</div>
-      </div>
-      <div class="input-field">
-        <span class="if-label">Charger power</span>
-        <div class="if-inner">
-          <input type="number" id="dc_chargerKw" min="1" max="350" value="50">
-          <span class="if-unit">kW</span>
-        </div>
-        <div class="if-sub">for time estimate</div>
-      </div>
+    <!-- No charge needed state -->
+    <div id="dcNcBlock" style="display:none; padding:16px 14px 12px; text-align:center;">
+      <div style="font-size:30px; line-height:1;">✓</div>
+      <div style="font-size:17px; font-weight:700; color:var(--green); margin-top:6px;" id="dc_ncTitle">No charging needed</div>
+      <div style="font-size:11px; color:var(--dim); margin-top:4px;" id="dc_ncDetail">—</div>
     </div>
-    <div class="dc-optimise-wrap">
-      <button class="dc-optimise-btn" onclick="dcOptimise()">↓ Optimise</button>
-    </div>
-  </div>
-
-  <div class="card" id="dcResultCard" style="display:none;">
-    <div class="dc-result-inner" id="dcChargeContent">
-      <div class="dc-result-label">Charge to</div>
-      <div class="dc-charge-to">
-        <div>
-          <div class="dc-big-val" id="dc_chargeToKm">—</div>
-          <div class="dc-big-unit">km</div>
+    <!-- Charge needed state -->
+    <div id="dcChargeBlock">
+      <div style="padding:12px 14px 0;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">Charge to</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <div class="dc-big-val" id="dc_chargeToKm">—</div>
+            <div class="dc-big-unit">km</div>
+          </div>
+          <div>
+            <div class="dc-big-val" id="dc_chargeToPct">—</div>
+            <div class="dc-big-unit">%</div>
+          </div>
         </div>
-        <div>
-          <div class="dc-big-val" id="dc_chargeToPct">—</div>
-          <div class="dc-big-unit">%</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <div class="dc-stat-label">Add</div>
+            <div class="dc-stat-val"><span id="dc_energyToAdd">—</span> kWh</div>
+          </div>
+          <div>
+            <div class="dc-stat-label">Cost</div>
+            <div class="dc-stat-val" id="dc_cost">—</div>
+          </div>
+          <div>
+            <div class="dc-stat-label">Time</div>
+            <div class="dc-stat-val" id="dc_time">—</div>
+          </div>
         </div>
       </div>
-      <div class="dc-stats">
-        <div class="dc-stat">
-          <div class="dc-stat-label">Add</div>
-          <div class="dc-stat-val"><span id="dc_energyToAdd">0.0</span> kWh</div>
-        </div>
-        <div class="dc-stat">
-          <div class="dc-stat-label">Cost</div>
-          <div class="dc-stat-val" id="dc_cost">$0.00</div>
-        </div>
-        <div class="dc-stat">
-          <div class="dc-stat-label">Time</div>
-          <div class="dc-stat-val" id="dc_time">—</div>
-        </div>
+      <div class="dc-vs" style="margin:0 12px 10px;">
+        <span style="flex:1">vs home off-peak</span>
+        <span class="dc-vs-val" id="dc_homeCost">—</span>
+        <span id="dc_multiple" style="font-size:10px;font-weight:600;color:var(--dim)">—</span>
       </div>
-    </div>
-    <div class="dc-vs" id="dcVsStrip">
-      <span style="flex:1">vs home off-peak</span>
-      <span class="dc-vs-val" id="dc_homeCost">—</span>
-      <span id="dc_multiple" style="font-size:10px;font-weight:600">—</span>
-    </div>
-    <div class="status-strip" id="dc_statusLine" style="margin:0 12px 12px;">
-      <span class="ss-dot"></span>
-      <span id="dc_statusText">—</span>
+      <div class="status-strip" id="dc_statusLine" style="margin:0 12px 12px;">
+        <span class="ss-dot"></span>
+        <span id="dc_statusText">—</span>
+      </div>
     </div>
     <details>
       <summary>Vehicle settings</summary>
@@ -567,21 +538,13 @@
         <div class="sg-f"><label>Battery usable (kWh)</label><input type="number" id="dc_s_capacity" value="60" step="0.1"></div>
         <div class="sg-f"><label>Home off-peak (c/kWh)</label><input type="number" id="dc_s_homeRate" value="4.5" step="0.1"></div>
         <div class="sg-f"><label>Max DC rate (kW)</label><input type="number" id="dc_s_maxDc" value="80" step="1"></div>
+        <div class="sg-f"><label>Charger power (kW)</label><input type="number" id="dc_chargerKw" min="1" max="350" value="50"></div>
       </div>
     </details>
   </div>
 
-  <!-- No charge needed result -->
-  <div class="card" id="dcNoChargeCard" style="display:none;">
-    <div class="dc-no-charge">
-      <div class="dc-tick">✓</div>
-      <div class="dc-nc-title">No charging needed</div>
-      <div class="dc-nc-sub" id="dc_noChargeDetail">You have enough range to get home.</div>
-    </div>
-  </div>
-
 </div>
-<footer>60 kWh · 430 km WLTP · tap Optimise for your minimum charge recommendation</footer>
+<footer>60 kWh · 430 km WLTP · minimum charge to arrive home with 25%</footer>
 </div><!-- /tabDc -->
 
 
@@ -633,38 +596,7 @@
     document.getElementById('tabDc').classList.toggle('active', tab === 'dc');
     document.getElementById('tabHomeBtn').classList.toggle('active', tab === 'home');
     document.getElementById('tabDcBtn').classList.toggle('active', tab === 'dc');
-    updateStickyBar();
-  }
-
-  function updateStickyBar() {
-    if (activeTab === 'home') {
-      // values already written by homeUpdate()
-    } else {
-      // DC sticky shows last optimise result or prompt
-      const chargeToKm = document.getElementById('dc_chargeToKm').textContent;
-      const cost = document.getElementById('dc_cost').textContent;
-      if (chargeToKm !== '—' && document.getElementById('dcResultCard').style.display !== 'none') {
-        document.getElementById('sbLabel1').textContent = 'Charge to';
-        document.getElementById('sbVal1').textContent   = chargeToKm;
-        document.getElementById('sbUnit1').textContent  = 'km';
-        document.getElementById('sbSub1').textContent   = document.getElementById('dc_chargeToPct').textContent + '% SOC';
-        document.getElementById('sbLabel2').textContent = 'DC cost';
-        document.getElementById('sbVal2').textContent   = cost;
-        document.getElementById('sbSub2').textContent   = document.getElementById('dc_multiple').textContent;
-        document.getElementById('sbBadge').textContent  = 'Optimised';
-        document.getElementById('sbBadge').className    = 'sb-badge';
-      } else {
-        document.getElementById('sbLabel1').textContent = 'DC Charger';
-        document.getElementById('sbVal1').textContent   = '—';
-        document.getElementById('sbUnit1').textContent  = '';
-        document.getElementById('sbSub1').textContent   = 'tap Optimise';
-        document.getElementById('sbLabel2').textContent = 'Cost';
-        document.getElementById('sbVal2').textContent   = '—';
-        document.getElementById('sbSub2').textContent   = '';
-        document.getElementById('sbBadge').textContent  = 'Ready';
-        document.getElementById('sbBadge').className    = 'sb-badge';
-      }
-    }
+    if (tab === 'dc') dcUpdate(); else homeUpdate();
   }
 
   // ═══════════════════════════ HOME CALCULATOR ═══════════════════════════
@@ -821,62 +753,50 @@
   }
 
   // ═══════════════════════════ DC CALCULATOR ═══════════════════════════
-  const dcCurrentKmEl  = document.getElementById('dc_currentKm');
-  const dcCurrentPctEl = document.getElementById('dc_currentPct');
+  const dcCurrentKmEl = document.getElementById('dc_currentKm');
 
-  dcCurrentKmEl.addEventListener('input', () => {
-    const fullKm = Number(document.getElementById('dc_s_fullKm').value) || 430;
-    dcCurrentPctEl.value = Math.round(Math.min(100, (Number(dcCurrentKmEl.value)||0) / fullKm * 100));
-  });
-  dcCurrentPctEl.addEventListener('input', () => {
-    const fullKm = Number(document.getElementById('dc_s_fullKm').value) || 430;
-    dcCurrentKmEl.value = Math.round(Math.min(fullKm, (Number(dcCurrentPctEl.value)||0) / 100 * fullKm));
-  });
-
+  dcCurrentKmEl.addEventListener('input', dcUpdate);
   ['dc_distKm','dc_targetPct','dc_price','dc_chargerKw',
    'dc_s_fullKm','dc_s_capacity','dc_s_homeRate','dc_s_maxDc'
-  ].forEach(id => document.getElementById(id).addEventListener('input', dcUpdateHints));
+  ].forEach(id => document.getElementById(id).addEventListener('input', dcUpdate));
 
-  function dcUpdateHints() {
-    const fullKm     = Number(document.getElementById('dc_s_fullKm').value)  || 430;
-    const targetPct  = Number(document.getElementById('dc_targetPct').value) || 25;
-    const price      = Number(document.getElementById('dc_price').value)     || 0.55;
-    document.getElementById('dc_arrivalKmHint').textContent = `≈ ${Math.round((targetPct/100)*fullKm)} km`;
-    document.getElementById('dc_priceHint').textContent     = `≈ ${Math.round(price*100)}c/kWh`;
-  }
+  function dcUpdate() {
+    const fullKm   = Math.max(1,   Number(document.getElementById('dc_s_fullKm').value)   || 430);
+    const capacity = Math.max(0.1, Number(document.getElementById('dc_s_capacity').value) || 60);
+    const homeRate = Number(document.getElementById('dc_s_homeRate').value) || 4.5;
+    const maxDcKw  = Number(document.getElementById('dc_s_maxDc').value)   || 80;
 
-  function dcOptimise() {
-    const fullKm    = Math.max(1,   Number(document.getElementById('dc_s_fullKm').value)    || 430);
-    const capacity  = Math.max(0.1, Number(document.getElementById('dc_s_capacity').value)  || 60);
-    const homeRate  = Number(document.getElementById('dc_s_homeRate').value)  || 4.5;
-    const maxDcKw   = Number(document.getElementById('dc_s_maxDc').value)     || 80;
+    const currentKm = Math.min(fullKm, Math.max(0, Number(dcCurrentKmEl.value) || 0));
+    const distKm    = Math.max(0, Number(document.getElementById('dc_distKm').value)    || 0);
+    const targetPct = Math.min(100, Math.max(0, Number(document.getElementById('dc_targetPct').value) || 25));
+    const price     = Math.max(0, Number(document.getElementById('dc_price').value)     || 0.55);
+    const chargerKw = Math.min(maxDcKw, Math.max(1, Number(document.getElementById('dc_chargerKw').value) || 50));
 
-    const currentKm  = Math.min(fullKm, Math.max(0, Number(dcCurrentKmEl.value)  || 0));
-    const distKm     = Math.max(0, Number(document.getElementById('dc_distKm').value)    || 0);
-    const targetPct  = Math.min(100, Math.max(0, Number(document.getElementById('dc_targetPct').value) || 25));
-    const price      = Math.max(0, Number(document.getElementById('dc_price').value)     || 0.55);
-    const chargerKw  = Math.min(maxDcKw, Math.max(1, Number(document.getElementById('dc_chargerKw').value) || 50));
+    // Update hints
+    const currentPct = Math.round(currentKm / fullKm * 100);
+    document.getElementById('dc_currentPctHint').textContent = `${currentPct}% SOC`;
+    document.getElementById('dc_arrivalKmHint').textContent  = `≈ ${Math.round((targetPct/100)*fullKm)} km`;
+    document.getElementById('dc_priceHint').textContent      = `${Math.round(price*100)}c/kWh`;
 
     const targetArrivalKm = (targetPct / 100) * fullKm;
     const neededToLeave   = distKm + targetArrivalKm;
     const kmToAdd         = Math.max(0, neededToLeave - currentKm);
 
-    document.getElementById('dcResultCard').style.display    = 'block';
-    document.getElementById('dcNoChargeCard').style.display  = 'none';
+    const ncBlock     = document.getElementById('dcNcBlock');
+    const chargeBlock = document.getElementById('dcChargeBlock');
 
     if (kmToAdd <= 0) {
-      document.getElementById('dcResultCard').style.display   = 'none';
-      document.getElementById('dcNoChargeCard').style.display = 'block';
+      ncBlock.style.display     = 'block';
+      chargeBlock.style.display = 'none';
       const arrivalKm  = currentKm - distKm;
       const arrivalPct = Math.round(arrivalKm / fullKm * 100);
-      document.getElementById('dc_noChargeDetail').textContent =
-        `You'll arrive home with ~${Math.round(arrivalKm)} km (${arrivalPct}%) — ${Math.round(currentKm - neededToLeave)} km to spare.`;
-      // sticky
+      document.getElementById('dc_ncDetail').textContent =
+        `Arrive home with ~${Math.round(arrivalKm)} km (${arrivalPct}%) · ${Math.round(currentKm - neededToLeave)} km to spare`;
       if (activeTab === 'dc') {
-        document.getElementById('sbLabel1').textContent = 'DC Charger';
-        document.getElementById('sbVal1').textContent   = '—';
-        document.getElementById('sbUnit1').textContent  = '';
-        document.getElementById('sbSub1').textContent   = 'No charging needed';
+        document.getElementById('sbLabel1').textContent = 'Arrive home';
+        document.getElementById('sbVal1').textContent   = Math.round(arrivalKm);
+        document.getElementById('sbUnit1').textContent  = 'km';
+        document.getElementById('sbSub1').textContent   = arrivalPct + '% · no charge needed';
         document.getElementById('sbLabel2').textContent = 'Cost';
         document.getElementById('sbVal2').textContent   = '$0.00';
         document.getElementById('sbSub2').textContent   = '';
@@ -886,10 +806,13 @@
       return;
     }
 
-    const chargeToKm  = neededToLeave;
-    const chargeToPct = Math.round(chargeToKm / fullKm * 100);
-    const energyToAdd = (kmToAdd / fullKm) * capacity;
-    const cost        = energyToAdd * price;
+    ncBlock.style.display     = 'none';
+    chargeBlock.style.display = 'block';
+
+    const chargeToKm    = neededToLeave;
+    const chargeToPct   = Math.round(chargeToKm / fullKm * 100);
+    const energyToAdd   = (kmToAdd / fullKm) * capacity;
+    const cost          = energyToAdd * price;
     const chargeMinutes = (energyToAdd / Math.min(chargerKw, maxDcKw)) * 60;
     const timeStr = chargeMinutes < 1 ? '<1m'
       : chargeMinutes < 60 ? `${Math.round(chargeMinutes)}m`
@@ -909,12 +832,13 @@
     const sl = document.getElementById('dc_statusLine');
     const st = document.getElementById('dc_statusText');
     if (currentKm < distKm) {
-      sl.className = 'status-strip warn'; st.textContent = `Range too low to reach home — must charge at least ${Math.round(distKm - currentKm)} km`;
+      sl.className = 'status-strip warn';
+      st.textContent = `Can't reach home — need at least ${Math.round(distKm - currentKm)} km more`;
     } else {
-      sl.className = 'status-strip'; st.textContent = `Add ${energyToAdd.toFixed(1)} kWh · stop at ${chargeToPct}% · ${costPerKm}c/km`;
+      sl.className = 'status-strip';
+      st.textContent = `Add ${energyToAdd.toFixed(1)} kWh · stop at ${chargeToPct}% · ${costPerKm}c/km`;
     }
 
-    // sticky
     if (activeTab === 'dc') {
       document.getElementById('sbLabel1').textContent = 'Charge to';
       document.getElementById('sbVal1').textContent   = Math.round(chargeToKm);
@@ -923,14 +847,14 @@
       document.getElementById('sbLabel2').textContent = 'DC cost';
       document.getElementById('sbVal2').textContent   = `$${cost.toFixed(2)}`;
       document.getElementById('sbSub2').textContent   = `${multiple.toFixed(1)}× vs home`;
-      document.getElementById('sbBadge').textContent  = 'Optimised';
+      document.getElementById('sbBadge').textContent  = 'Live';
       document.getElementById('sbBadge').className    = 'sb-badge';
     }
   }
 
   // ═══════════════════════════ INIT ═══════════════════════════
   (function init() {
-    dcUpdateHints();
+    dcUpdate();
     selectCharger('L2');
   })();
 </script>
