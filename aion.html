@@ -178,6 +178,7 @@
   .if-inner input[type="time"]::-webkit-calendar-picker-indicator { filter: opacity(0.4); }
   .if-unit { font-size: 13px; font-weight: 600; color: var(--dim); flex-shrink: 0; }
   .if-sub { font-size: 10px; font-weight: 500; color: var(--dim); margin-top: 4px; }
+  .soc-hint { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--green); margin-top: 4px; }
 
   /* dollar prefix */
   .if-prefix { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: var(--dim); flex-shrink: 0; line-height: 1; }
@@ -454,7 +455,7 @@
           <input type="number" id="dc_currentKm" min="0" max="430" value="60">
           <span class="if-unit">km</span>
         </div>
-        <div class="if-sub" id="dc_currentPctHint">14% SOC</div>
+        <div class="soc-hint" id="dc_currentPctHint">14% SOC</div>
       </div>
       <div class="input-field">
         <span class="if-label">Distance home</span>
@@ -809,17 +810,20 @@
     ncBlock.style.display     = 'none';
     chargeBlock.style.display = 'block';
 
-    const chargeToKm    = neededToLeave;
+    // Cap recommendation at 100% — can't charge beyond a full battery
+    const chargeToKm    = Math.min(fullKm, neededToLeave);
     const chargeToPct   = Math.round(chargeToKm / fullKm * 100);
-    const energyToAdd   = (kmToAdd / fullKm) * capacity;
+    const impossible    = neededToLeave > fullKm; // even 100% won't cover distance + buffer
+    const actualKmToAdd = Math.max(0, chargeToKm - currentKm);
+    const energyToAdd   = (actualKmToAdd / fullKm) * capacity;
     const cost          = energyToAdd * price;
-    const chargeMinutes = (energyToAdd / Math.min(chargerKw, maxDcKw)) * 60;
+    const chargeMinutes = energyToAdd > 0 ? (energyToAdd / Math.min(chargerKw, maxDcKw)) * 60 : 0;
     const timeStr = chargeMinutes < 1 ? '<1m'
       : chargeMinutes < 60 ? `${Math.round(chargeMinutes)}m`
       : `${Math.floor(chargeMinutes/60)}h ${Math.round(chargeMinutes%60)}m`;
     const homeCost  = energyToAdd * homeRate / 100;
     const multiple  = homeCost > 0 ? (cost / homeCost) : 0;
-    const costPerKm = kmToAdd > 0 ? (cost * 100 / kmToAdd).toFixed(1) : '—';
+    const costPerKm = actualKmToAdd > 0 ? (cost * 100 / actualKmToAdd).toFixed(1) : '—';
 
     document.getElementById('dc_chargeToKm').textContent  = Math.round(chargeToKm);
     document.getElementById('dc_chargeToPct').textContent = chargeToPct;
@@ -831,9 +835,15 @@
 
     const sl = document.getElementById('dc_statusLine');
     const st = document.getElementById('dc_statusText');
-    if (currentKm < distKm) {
+    if (impossible) {
       sl.className = 'status-strip warn';
-      st.textContent = `Can't reach home — need at least ${Math.round(distKm - currentKm)} km more`;
+      const shortfall = Math.round(neededToLeave - fullKm);
+      st.textContent = `Even a full charge is ${shortfall} km short of home + ${targetPct}% buffer`;
+    } else if (currentKm < distKm) {
+      sl.className = 'status-strip warn';
+      const minKm  = Math.ceil(distKm + targetArrivalKm - (fullKm - currentKm) + currentKm);
+      const minPct = Math.ceil(neededToLeave / fullKm * 100);
+      st.textContent = `Insufficient charge to reach home — recharge to ${minPct}% (${Math.round(neededToLeave)} km)`;
     } else {
       sl.className = 'status-strip';
       st.textContent = `Add ${energyToAdd.toFixed(1)} kWh · stop at ${chargeToPct}% · ${costPerKm}c/km`;
